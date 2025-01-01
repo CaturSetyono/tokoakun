@@ -22,7 +22,7 @@ git status --short
 echo ""
 
 COUNT=0
-CURRENT_DAY=16
+CURRENT_DAY=1
 
 # ── Detect commit type from filename / path ──────────────────────────────────
 get_type() {
@@ -94,15 +94,15 @@ while IFS= read -r line; do
 
     # Format the day with leading zero if needed
     FORMATTED_DAY=$(printf "%02d" $CURRENT_DAY)
-    COMMIT_DATE="2026-03-$FORMATTED_DAY 10:00:00"
+    COMMIT_DATE="2025-01-$FORMATTED_DAY 10:00:00"
     
     echo " amending date → $COMMIT_DATE"
     git commit --amend --no-edit --date="$COMMIT_DATE" > /dev/null
 
-    # Increment day and reset if it exceeds 30
+    # Increment day and reset if it exceeds 13
     CURRENT_DAY=$((CURRENT_DAY + 1))
-    if [ "$CURRENT_DAY" -gt 30 ]; then
-        CURRENT_DAY=16
+    if [ "$CURRENT_DAY" -gt 13 ]; then
+        CURRENT_DAY=1
     fi
 
     COUNT=$((COUNT + 1))
