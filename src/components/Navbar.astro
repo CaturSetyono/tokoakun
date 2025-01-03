@@ -1,4 +1,5 @@
 ---
+import { Smartphone, Film, Wrench, Handshake } from 'lucide-astro';
 import { getCartCount } from '../lib/cart';
 
 const { userId, userRole, userName, userEmail } = Astro.locals;
@@ -21,21 +22,21 @@ const cartCount = userId ? await getCartCount(userId) : 0;
         </button>
         <div id="shop-menu" class="dropdown-menu" data-open="false">
           <a href="/shop/social-media" class="dropdown-item">
-            <span class="dropdown-icon">📱</span>
+            <span class="dropdown-icon"><Smartphone size={20} /></span>
             <div>
               <div class="dropdown-item-title">Social Media Solution</div>
               <div class="dropdown-item-desc">Followers, likes, views</div>
             </div>
           </a>
           <a href="/shop/premium-apps" class="dropdown-item">
-            <span class="dropdown-icon">🎬</span>
+            <span class="dropdown-icon"><Film size={20} /></span>
             <div>
               <div class="dropdown-item-title">Premium Apps</div>
               <div class="dropdown-item-desc">Netflix, Spotify, dll.</div>
             </div>
           </a>
           <a href="/shop/jasa" class="dropdown-item">
-            <span class="dropdown-icon">🛠️</span>
+            <span class="dropdown-icon"><Wrench size={20} /></span>
             <div>
               <div class="dropdown-item-title">Jasa</div>
               <div class="dropdown-item-desc">Desain, dev, editing</div>
@@ -43,7 +44,7 @@ const cartCount = userId ? await getCartCount(userId) : 0;
           </a>
           <div class="dropdown-divider"></div>
           <a href="/reseller" class="dropdown-item">
-            <span class="dropdown-icon">🤝</span>
+            <span class="dropdown-icon"><Handshake size={20} /></span>
             <div>
               <div class="dropdown-item-title">Join Reseller</div>
               <div class="dropdown-item-desc">Daftar jadi mitra</div>
@@ -158,7 +159,7 @@ const cartCount = userId ? await getCartCount(userId) : 0;
     transition: background 0.15s;
   }
   .dropdown-item:hover { background: var(--bg-secondary); }
-  .dropdown-icon { font-size: 20px; }
+  .dropdown-icon { display: flex; align-items: center; flex-shrink: 0; }
   .dropdown-item-title { font-size: 13px; font-weight: 600; }
   .dropdown-item-desc { font-size: 11px; color: var(--text-secondary); }
 
