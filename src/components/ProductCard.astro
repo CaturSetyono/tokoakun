@@ -1,6 +1,7 @@
 ---
 import { idrFormat, NICHE_LABEL, NICHE_SLUG } from '../lib/cart';
 import type { ProductNiche } from '../lib/database.types';
+import { Smartphone, Film, Wrench, Package } from 'lucide-astro';
 
 interface Props {
   slug: string;
@@ -15,18 +16,15 @@ interface Props {
 
 const { slug, niche, title, thumbnailUrl, description, minPrice, variantCount, featured } = Astro.props;
 
-const NICHE_EMOJI: Record<string, string> = {
-  social_media: '📱',
-  premium_apps: '🎬',
-  jasa: '🛠️',
-};
 ---
 
 <a href={`/shop/${NICHE_SLUG[niche]}/${slug}`} class="product-card card">
   <div class="thumb">
     {thumbnailUrl
       ? <img src={thumbnailUrl} alt={title} loading="lazy" />
-      : <div class="thumb-placeholder">{NICHE_EMOJI[niche] ?? '📦'}</div>
+      : <div class="thumb-placeholder">
+          {niche === 'social_media' ? <Smartphone size={46} color="var(--text-secondary)" /> : niche === 'premium_apps' ? <Film size={46} color="var(--text-secondary)" /> : niche === 'jasa' ? <Wrench size={46} color="var(--text-secondary)" /> : <Package size={46} color="var(--text-secondary)" />}
+        </div>
     }
     {featured && <span class="featured-badge">Featured</span>}
   </div>
@@ -70,7 +68,6 @@ const NICHE_EMOJI: Record<string, string> = {
   .thumb-placeholder {
     width: 100%; height: 100%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 46px;
   }
   .featured-badge {
     position: absolute;
