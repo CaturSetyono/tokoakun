@@ -1,5 +1,6 @@
 ---
 import { idrFormat, NICHE_LABEL } from '../lib/cart';
+import { Package } from 'lucide-astro';
 import type { ProductNiche, RequirementFieldType } from '../lib/database.types';
 
 interface Variant {
@@ -54,7 +55,7 @@ const displayImages = thumbnailUrl
     {displayImages.length > 0 ? (
       <img src={displayImages[0]} alt={title} class="hero-img" />
     ) : (
-      <div class="hero-placeholder">📦</div>
+      <div class="hero-placeholder"><Package size={80} color="var(--text-secondary)" /></div>
     )}
   </div>
 
@@ -189,7 +190,6 @@ const displayImages = thumbnailUrl
   }
   .hero-placeholder {
     display: flex; align-items: center; justify-content: center;
-    font-size: 80px;
   }
 
   .info { display: flex; flex-direction: column; gap: 24px; }
