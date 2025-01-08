@@ -1,5 +1,6 @@
 ---
 import PublicLayout from '../layouts/PublicLayout.astro';
+import { Mail, MessageCircle, Send } from 'lucide-astro';
 
 const faqs = [
   { q: 'Berapa lama akun dikirim setelah pembayaran?', a: 'Langsung otomatis! Setelah pembayaran terverifikasi, data akun langsung tersedia di dashboard kamu.' },
@@ -25,36 +26,24 @@ const faqs = [
     <section class="section">
       <div class="container max-w-4xl">
         <div class="grid md:grid-cols-3 gap-6 mb-12">
-          {[
-            {
-              icon: '📧',
-              title: 'Email',
-              value: 'support@toadshop.id',
-              desc: 'Balasan dalam 1x24 jam',
-              href: 'mailto:support@toadshop.id',
-            },
-            {
-              icon: '💬',
-              title: 'WhatsApp',
-              value: '+62 812-3456-7890',
-              desc: 'Senin–Sabtu, 08.00–20.00 WIB',
-              href: 'https://wa.me/6281234567890',
-            },
-            {
-              icon: '📱',
-              title: 'Telegram',
-              value: '@toadshop_id',
-              desc: 'Chat langsung dengan admin',
-              href: 'https://t.me/toadshop_id',
-            },
-          ].map(c => (
-            <a href={c.href} target="_blank" rel="noopener noreferrer" class="card p-6 text-center hover:border-accent/40 transition group">
-              <div class="text-4xl mb-3">{c.icon}</div>
-              <h3 class="font-bold text-lg mb-1">{c.title}</h3>
-              <p class="font-semibold text-accent group-hover:underline">{c.value}</p>
-              <p class="text-sm opacity-50 mt-1">{c.desc}</p>
-            </a>
-          ))}
+          <a href="mailto:support@toadshop.id" target="_blank" rel="noopener noreferrer" class="card p-6 text-center hover:border-accent/40 transition group">
+            <div class="flex justify-center mb-3"><Mail size={40} /></div>
+            <h3 class="font-bold text-lg mb-1">Email</h3>
+            <p class="font-semibold text-accent group-hover:underline">support@toadshop.id</p>
+            <p class="text-sm opacity-50 mt-1">Balasan dalam 1x24 jam</p>
+          </a>
+          <a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer" class="card p-6 text-center hover:border-accent/40 transition group">
+            <div class="flex justify-center mb-3"><MessageCircle size={40} /></div>
+            <h3 class="font-bold text-lg mb-1">WhatsApp</h3>
+            <p class="font-semibold text-accent group-hover:underline">+62 812-3456-7890</p>
+            <p class="text-sm opacity-50 mt-1">Senin–Sabtu, 08.00–20.00 WIB</p>
+          </a>
+          <a href="https://t.me/toadshop_id" target="_blank" rel="noopener noreferrer" class="card p-6 text-center hover:border-accent/40 transition group">
+            <div class="flex justify-center mb-3"><Send size={40} /></div>
+            <h3 class="font-bold text-lg mb-1">Telegram</h3>
+            <p class="font-semibold text-accent group-hover:underline">@toadshop_id</p>
+            <p class="text-sm opacity-50 mt-1">Chat langsung dengan admin</p>
+          </a>
         </div>
 
         <!-- Contact Form -->
