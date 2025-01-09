@@ -2,6 +2,7 @@
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 import { idrFormat, NICHE_LABEL } from '../../../lib/cart';
+import { CheckCircle } from 'lucide-astro';
 
 const { data: orders } = await supabaseAdmin
   .from('orders')
@@ -103,8 +104,8 @@ const itemStatusStyle: Record<string, string> = {
                             </div>
                           )}
                           {item.fulfillment_note && (
-                            <div style="margin-top:6px; padding:8px 10px; background:rgba(34,197,94,0.05); border-radius:8px; font-size:11px;">
-                              ✅ {item.fulfillment_note}
+                            <div style="margin-top:6px; padding:8px 10px; background:rgba(34,197,94,0.05); border-radius:8px; font-size:11px; display:flex; align-items:flex-start; gap:6px;">
+                              <CheckCircle size={13} color="#22c55e" style="flex-shrink:0; margin-top:1px;" /> {item.fulfillment_note}
                             </div>
                           )}
                         </div>
