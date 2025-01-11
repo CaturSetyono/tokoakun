@@ -1,5 +1,6 @@
 ﻿---
 import DashboardLayout from '../../../../layouts/DashboardLayout.astro';
+import { Smartphone, Film, Wrench } from 'lucide-astro';
 ---
 
 <DashboardLayout title="Tambah Produk" role="admin" activeMenu="Products">
@@ -14,7 +15,7 @@ import DashboardLayout from '../../../../layouts/DashboardLayout.astro';
           <label class="niche-option">
             <input type="radio" name="niche" value="social_media" required />
             <div>
-              <div class="emoji">📱</div>
+              <div class="emoji"><Smartphone size={22} /></div>
               <div class="niche-title">Social Media Solution</div>
               <div class="niche-desc">Followers, likes, views (stok unlimited)</div>
             </div>
@@ -22,7 +23,7 @@ import DashboardLayout from '../../../../layouts/DashboardLayout.astro';
           <label class="niche-option">
             <input type="radio" name="niche" value="premium_apps" />
             <div>
-              <div class="emoji">🎬</div>
+              <div class="emoji"><Film size={22} /></div>
               <div class="niche-title">Premium Apps</div>
               <div class="niche-desc">Netflix, Spotify (stok dari kredensial)</div>
             </div>
@@ -30,7 +31,7 @@ import DashboardLayout from '../../../../layouts/DashboardLayout.astro';
           <label class="niche-option">
             <input type="radio" name="niche" value="jasa" />
             <div>
-              <div class="emoji">🛠️</div>
+              <div class="emoji"><Wrench size={22} /></div>
               <div class="niche-title">Jasa</div>
               <div class="niche-desc">Desain, dev, editing (stok unlimited)</div>
             </div>
@@ -106,7 +107,7 @@ import DashboardLayout from '../../../../layouts/DashboardLayout.astro';
     background: rgba(232,40,61,0.08);
   }
   .niche-option input { margin-top:3px; accent-color: var(--accent); }
-  .emoji { font-size: 22px; margin-bottom: 4px; }
+  .emoji { display: flex; align-items: center; margin-bottom: 4px; }
   .niche-title { font-size:13px; font-weight:600; }
   .niche-desc { font-size:11px; color:var(--text-secondary); margin-top:2px; }
 </style>
