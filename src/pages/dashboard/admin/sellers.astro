@@ -1,6 +1,7 @@
 ---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
 import { supabase } from '../../../lib/supabase';
+import { Medal } from 'lucide-astro';
 
 // All sellers with stats
 const { data: sellers } = await supabase
@@ -94,7 +95,7 @@ const sellerStats = (sellers ?? []).map(s => {
               {sellerStats.map((seller, i) => (
                 <tr class="border-b border-white/5 hover:bg-white/5 transition">
                   <td class="py-3 pr-4 font-bold opacity-40">
-                    {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
+                    {i === 0 ? <Medal size={18} color="#FFD700" /> : i === 1 ? <Medal size={18} color="#C0C0C0" /> : i === 2 ? <Medal size={18} color="#CD7F32" /> : `#${i + 1}`}
                   </td>
                   <td class="py-3 pr-4">
                     <p class="font-medium">{seller.name}</p>
