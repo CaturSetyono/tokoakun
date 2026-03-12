@@ -1,6 +1,7 @@
 ---
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import { supabase } from '../../lib/supabase';
+import { Gamepad2, CheckCircle, Lock, Mail, ShoppingCart } from 'lucide-astro';
 
 const { id } = Astro.params;
 
@@ -41,7 +42,7 @@ const isAvailable = account.status === 'available';
           <div class="card" style="padding:0; overflow:hidden; aspect-ratio:4/3;">
             {account.thumbnail_url
               ? <img src={account.thumbnail_url} alt={account.title} style="width:100%; height:100%; object-fit:cover;" />
-              : <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:64px; background:var(--bg-secondary);">🎮</div>
+              : <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:var(--bg-secondary); color:var(--text-secondary);"><Gamepad2 size={80} strokeWidth={1} /></div>
             }
           </div>
         </div>
@@ -63,13 +64,13 @@ const isAvailable = account.status === 'available';
 
           <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:24px; font-size:13px; color:var(--text-secondary);">
             <div style="display:flex; gap:8px; align-items:center;">
-              <span>✅</span> Auto delivery setelah pembayaran
+              <CheckCircle size={16} style="color:#22c55e;" /> Auto delivery setelah pembayaran
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
-              <span>🔒</span> Transaksi aman via Mayar.id
+              <Lock size={16} /> Transaksi aman via Mayar.id
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
-              <span>📧</span> Akun dikirim via halaman pesanan
+              <Mail size={16} /> Akun dikirim via halaman pesanan
             </div>
           </div>
 
@@ -78,9 +79,9 @@ const isAvailable = account.status === 'available';
               id="buy-btn"
               data-account-id={account.id}
               class="btn-accent"
-              style="width:100%; padding:14px; font-size:15px; text-align:center;"
+              style="width:100%; padding:14px; font-size:15px; display:flex; align-items:center; justify-content:center; gap:8px;"
             >
-              🛒 Beli Sekarang
+              <ShoppingCart size={18} id="buy-icon" /> <span id="buy-text">Beli Sekarang</span>
             </button>
           ) : (
             <div style="background:rgba(239,68,68,0.1); color:#ef4444; padding:14px; border-radius:12px; text-align:center; font-weight:600; font-size:15px;">
@@ -96,14 +97,17 @@ const isAvailable = account.status === 'available';
 </PublicLayout>
 
 <script>
-  import { supabase } from '../../lib/supabase';
+  import { supabase } from '../../lib/supabase-browser';
 
   const buyBtn = document.getElementById('buy-btn') as HTMLButtonElement | null;
+  const buyIcon = document.getElementById('buy-icon');
+  const buyText = document.getElementById('buy-text');
   const errorDiv = document.getElementById('buy-error')!;
 
   buyBtn?.addEventListener('click', async () => {
     errorDiv.style.display = 'none';
-    buyBtn.textContent = 'Loading...';
+    if (buyText) buyText.textContent = 'Loading...';
+    if (buyIcon) buyIcon.style.display = 'none';
     buyBtn.disabled = true;
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -130,7 +134,8 @@ const isAvailable = account.status === 'available';
     if (orderError || !order) {
       errorDiv.textContent = 'Gagal membuat order: ' + (orderError?.message ?? 'Unknown error');
       errorDiv.style.display = 'block';
-      buyBtn.textContent = '🛒 Beli Sekarang';
+      if (buyText) buyText.textContent = 'Beli Sekarang';
+      if (buyIcon) buyIcon.style.display = 'block';
       buyBtn.disabled = false;
       return;
     }
@@ -154,7 +159,8 @@ const isAvailable = account.status === 'available';
     if (!res.ok || !result.paymentUrl) {
       errorDiv.textContent = result.error ?? 'Gagal membuat payment link.';
       errorDiv.style.display = 'block';
-      buyBtn.textContent = '🛒 Beli Sekarang';
+      if (buyText) buyText.textContent = 'Beli Sekarang';
+      if (buyIcon) buyIcon.style.display = 'block';
       buyBtn.disabled = false;
       return;
     }

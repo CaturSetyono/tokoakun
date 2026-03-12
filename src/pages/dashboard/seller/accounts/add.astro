@@ -1,5 +1,6 @@
 ---
 import DashboardLayout from '../../../../layouts/DashboardLayout.astro';
+import { AlertTriangle } from 'lucide-astro';
 ---
 
 <DashboardLayout title="Tambah Akun" role="seller" activeMenu="My Accounts">
@@ -35,7 +36,9 @@ import DashboardLayout from '../../../../layouts/DashboardLayout.astro';
         <div class="form-group">
           <label class="form-label">Password Akun *</label>
           <input type="text" id="password_account" class="form-input" placeholder="Password akun yang dijual" required />
-          <p style="font-size:12px; color:var(--text-secondary); margin-top:4px;">⚠️ Password hanya terlihat oleh pembeli setelah transaksi berhasil.</p>
+          <p style="font-size:12px; color:var(--text-secondary); margin-top:4px; display:flex; align-items:center; gap:6px;">
+            <AlertTriangle size={14} style="color:#f59e0b;" /> Password hanya terlihat oleh pembeli setelah transaksi berhasil.
+          </p>
         </div>
 
         <div class="form-group">
