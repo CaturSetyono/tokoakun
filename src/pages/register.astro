@@ -1,5 +1,6 @@
 ---
 import PublicLayout from '../layouts/PublicLayout.astro';
+import { ShoppingCart, Briefcase } from 'lucide-astro';
 ---
 
 <PublicLayout title="Register">
@@ -31,7 +32,7 @@ import PublicLayout from '../layouts/PublicLayout.astro';
             <label class="role-option" id="role-buyer">
               <input type="radio" name="role" value="buyer" checked style="display:none;" />
               <div class="role-card active" id="card-buyer">
-                <span style="font-size:24px;">🛒</span>
+                <ShoppingCart size={24} style="margin-bottom:4px;" />
                 <span style="font-weight:600; font-size:14px;">Buyer</span>
                 <span style="font-size:11px; color:var(--text-secondary);">Beli akun digital</span>
               </div>
@@ -39,7 +40,7 @@ import PublicLayout from '../layouts/PublicLayout.astro';
             <label class="role-option" id="role-seller">
               <input type="radio" name="role" value="seller" style="display:none;" />
               <div class="role-card" id="card-seller">
-                <span style="font-size:24px;">💼</span>
+                <Briefcase size={24} style="margin-bottom:4px;" />
                 <span style="font-weight:600; font-size:14px;">Seller</span>
                 <span style="font-size:11px; color:var(--text-secondary);">Jual akun digital</span>
               </div>
@@ -100,7 +101,7 @@ import PublicLayout from '../layouts/PublicLayout.astro';
 </style>
 
 <script>
-  import { supabase } from '../lib/supabase';
+  import { supabase } from '../lib/supabase-browser';
 
   // Role card toggle
   const buyerCard = document.getElementById('card-buyer')!;
@@ -137,8 +138,13 @@ import PublicLayout from '../layouts/PublicLayout.astro';
     const password = (document.getElementById('password') as HTMLInputElement).value;
     const role = (document.querySelector<HTMLInputElement>('input[name="role"]:checked')?.value ?? 'buyer') as 'buyer' | 'seller';
 
-    // Register with Supabase Auth
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    // Register with Supabase Auth — pass name & role as metadata
+    // A SECURITY DEFINER trigger on auth.users will auto-create the profile row
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name, role } },
+    });
 
     if (error) {
       errorMsg.textContent = error.message;
@@ -146,24 +152,6 @@ import PublicLayout from '../layouts/PublicLayout.astro';
       submitBtn.textContent = 'Daftar Sekarang';
       submitBtn.disabled = false;
       return;
-    }
-
-    if (data.user) {
-      // Insert profile row
-      const { error: profileError } = await supabase.from('users').insert({
-        id: data.user.id,
-        name,
-        email,
-        role,
-      });
-
-      if (profileError) {
-        errorMsg.textContent = 'Gagal menyimpan profil: ' + profileError.message;
-        errorMsg.style.display = 'block';
-        submitBtn.textContent = 'Daftar Sekarang';
-        submitBtn.disabled = false;
-        return;
-      }
     }
 
     successMsg.textContent = 'Akun berhasil dibuat! Silakan login.';
