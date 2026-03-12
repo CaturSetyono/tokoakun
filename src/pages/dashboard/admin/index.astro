@@ -1,6 +1,7 @@
 ---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
 import { supabase } from '../../../lib/supabase';
+import { Users, Package, CheckCircle, Folder, CircleDollarSign, Hash, LineChart } from 'lucide-astro';
 
 const { count: totalUsers } = await supabase
   .from('users')
@@ -32,27 +33,30 @@ const { count: soldAccounts } = await supabase
 
     <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:16px; margin-bottom:32px;">
       {[
-        { label: 'Total Users', value: totalUsers ?? 0, icon: '👥', color: '#3b82f6' },
-        { label: 'Total Orders', value: totalOrders ?? 0, icon: '📦', color: '#8b5cf6' },
-        { label: 'Paid Orders', value: paidOrders ?? 0, icon: '✅', color: '#22c55e' },
-        { label: 'Total Accounts', value: totalAccounts ?? 0, icon: '🗂️', color: '#f59e0b' },
-        { label: 'Accounts Sold', value: soldAccounts ?? 0, icon: '💰', color: '#a6ff00' },
-      ].map(stat => (
+        { label: 'Total Users', value: totalUsers ?? 0, icon: Users, color: '#3b82f6' },
+        { label: 'Total Orders', value: totalOrders ?? 0, icon: Package, color: '#8b5cf6' },
+        { label: 'Paid Orders', value: paidOrders ?? 0, icon: CheckCircle, color: '#22c55e' },
+        { label: 'Total Accounts', value: totalAccounts ?? 0, icon: Folder, color: '#f59e0b' },
+        { label: 'Accounts Sold', value: soldAccounts ?? 0, icon: CircleDollarSign, color: '#a6ff00' },
+      ].map(stat => {
+        const Icon = stat.icon;
+        return (
         <div class="card" style="padding:20px;">
-          <div style="font-size:22px; margin-bottom:10px;">{stat.icon}</div>
+          <Icon size={26} style={`margin-bottom:10px; color:${stat.color};`} />
           <div style={`font-size:26px; font-weight:700; color:${stat.color};`}>{stat.value}</div>
           <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">{stat.label}</div>
         </div>
-      ))}
+        )
+      })}
     </div>
 
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
       <div class="card" style="padding:24px;">
         <h2 style="font-size:16px; font-weight:600; margin:0 0 16px;">Quick Links</h2>
         <div style="display:flex; flex-direction:column; gap:10px;">
-          <a href="/dashboard/admin/users" class="btn-outline" style="font-size:13px; text-align:center;">👥 User Management</a>
-          <a href="/dashboard/admin/orders" class="btn-outline" style="font-size:13px; text-align:center;">📦 All Orders</a>
-          <a href="/dashboard/admin/sellers" class="btn-outline" style="font-size:13px; text-align:center;">📈 Seller Analytics</a>
+          <a href="/dashboard/admin/users" class="btn-outline" style="font-size:13px; display:inline-flex; justify-content:center; align-items:center; gap:8px;"><Users size={16} /> User Management</a>
+          <a href="/dashboard/admin/orders" class="btn-outline" style="font-size:13px; display:inline-flex; justify-content:center; align-items:center; gap:8px;"><Package size={16} /> All Orders</a>
+          <a href="/dashboard/admin/sellers" class="btn-outline" style="font-size:13px; display:inline-flex; justify-content:center; align-items:center; gap:8px;"><LineChart size={16} /> Seller Analytics</a>
         </div>
       </div>
 
