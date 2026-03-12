@@ -1,6 +1,7 @@
 ---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
 import { supabase } from '../../../lib/supabase';
+import { ShoppingCart, Package } from 'lucide-astro';
 
 const { data: { user } } = await supabase.auth.getUser();
 
@@ -35,8 +36,8 @@ const { count: paidOrders } = await supabase
     <div class="card" style="padding:24px;">
       <h2 style="font-size:16px; font-weight:600; margin:0 0 16px;">Aksi Cepat</h2>
       <div style="display:flex; gap:12px; flex-wrap:wrap;">
-        <a href="/shop" class="btn-accent" style="font-size:13px;">🛒 Browse Shop</a>
-        <a href="/dashboard/buyer/orders" class="btn-outline" style="font-size:13px;">📦 Lihat Pesanan</a>
+        <a href="/shop" class="btn-accent" style="font-size:13px; display:inline-flex; align-items:center; gap:8px;"><ShoppingCart size={16} /> Browse Shop</a>
+        <a href="/dashboard/buyer/orders" class="btn-outline" style="font-size:13px; display:inline-flex; align-items:center; gap:8px;"><Package size={16} /> Lihat Pesanan</a>
       </div>
     </div>
   </div>
