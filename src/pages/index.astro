@@ -3,6 +3,7 @@ import PublicLayout from '../layouts/PublicLayout.astro';
 import AccountCard from '../components/AccountCard.astro';
 import SellerCard from '../components/SellerCard.astro';
 import { supabase } from '../lib/supabase';
+import { Gamepad2, ShoppingBag, Zap, Lock, Briefcase, Mail, MessageCircle } from 'lucide-astro';
 
 // Fetch latest 8 available accounts
 const { data: featuredAccounts } = await supabase
@@ -75,7 +76,7 @@ const topSellerList = [...sellerMap.values()]
       <!-- Right: illustration placeholder -->
       <div style="display:flex; align-items:center; justify-content:center;">
         <div style="width:420px; height:420px; border-radius:32px; background: linear-gradient(135deg, rgba(166,255,0,0.15), rgba(141,255,0,0.05)); border:1px solid rgba(166,255,0,0.2); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;">
-          <div style="font-size:80px;">🎮</div>
+          <Gamepad2 size={80} strokeWidth={1.2} style="color: var(--accent);" />
           <div style="font-size:16px; font-weight:600; color:var(--text-primary);">Premium Digital Accounts</div>
           <div style="font-size:13px; color:var(--text-secondary);">Netflix · Spotify · Steam · Disney+</div>
           <div style="margin-top:8px; display:flex; gap:8px;">
@@ -112,8 +113,8 @@ const topSellerList = [...sellerMap.values()]
           ))}
         </div>
       ) : (
-        <div style="text-align:center; padding:60px; color:var(--text-secondary);">
-          <div style="font-size:40px; margin-bottom:12px;">🛍️</div>
+        <div style="text-align:center; padding:60px; color:var(--text-secondary); display:flex; flex-direction:column; align-items:center;">
+          <ShoppingBag size={48} strokeWidth={1.5} style="margin-bottom:16px; color:var(--text-secondary);" />
           <p>Belum ada akun yang tersedia. <a href="/register" style="color:var(--accent);">Jadi seller pertama!</a></p>
         </div>
       )}
@@ -154,20 +155,23 @@ const topSellerList = [...sellerMap.values()]
         <h2 style="font-size:32px; font-weight:700; margin:0 0 20px;">Kenapa TokoAkun?</h2>
         <div style="display:flex; flex-direction:column; gap:20px;">
           {[
-            { icon: '⚡', title: 'Auto Delivery', desc: 'Akun terkirim otomatis setelah pembayaran berhasil, tanpa perlu menunggu.' },
-            { icon: '🔒', title: 'Transaksi Aman', desc: 'Sistem pembayaran terintegrasi dengan verifikasi otomatis via Mayar.id.' },
-            { icon: '💼', title: 'Mudah Berjualan', desc: 'Seller bisa menambah dan mengelola stok akun dari dashboard yang simple.' },
-          ].map(item => (
+            { icon: Zap, title: 'Auto Delivery', desc: 'Akun terkirim otomatis setelah pembayaran berhasil, tanpa perlu menunggu.' },
+            { icon: Lock, title: 'Transaksi Aman', desc: 'Sistem pembayaran terintegrasi dengan verifikasi otomatis via Mayar.id.' },
+            { icon: Briefcase, title: 'Mudah Berjualan', desc: 'Seller bisa menambah dan mengelola stok akun dari dashboard yang simple.' },
+          ].map(item => {
+            const Icon = item.icon;
+            return (
             <div style="display:flex; gap:16px; align-items:flex-start;">
-              <div style="width:44px; height:44px; background:rgba(166,255,0,0.1); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
-                {item.icon}
+              <div style="width:44px; height:44px; background:rgba(166,255,0,0.1); border-radius:12px; display:flex; align-items:center; justify-content:center; color:var(--accent); flex-shrink:0;">
+                <Icon size={22} strokeWidth={2} />
               </div>
               <div>
                 <h3 style="font-size:15px; font-weight:600; margin:0 0 4px;">{item.title}</h3>
                 <p style="font-size:13px; color:var(--text-secondary); margin:0; line-height:1.6;">{item.desc}</p>
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
       </div>
       <div style="background:var(--card-bg); border:1px solid var(--border-color); border-radius:20px; padding:32px;">
@@ -197,11 +201,11 @@ const topSellerList = [...sellerMap.values()]
         Hubungi kami jika ada pertanyaan seputar transaksi atau akun kamu.
       </p>
       <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
-        <a href="mailto:support@tokoakun.id" class="btn-accent" style="padding:12px 24px;">
-          📧 Email Kami
+        <a href="mailto:support@tokoakun.id" class="btn-accent" style="padding:12px 24px; display:inline-flex; align-items:center; gap:8px;">
+          <Mail size={18} /> Email Kami
         </a>
-        <a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer" class="btn-outline" style="padding:12px 24px;">
-          💬 WhatsApp
+        <a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer" class="btn-outline" style="padding:12px 24px; display:inline-flex; align-items:center; gap:8px;">
+          <MessageCircle size={18} /> WhatsApp
         </a>
       </div>
     </div>
