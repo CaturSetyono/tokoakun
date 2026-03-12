@@ -1,4 +1,6 @@
 ---
+import { LayoutDashboard, Folder, CheckCircle, ShoppingCart, CircleDollarSign, Settings, Home, Package, Users, LineChart, Hash, LogOut } from 'lucide-astro';
+
 interface Props {
   role: 'admin' | 'seller' | 'buyer';
   activeMenu?: string;
@@ -6,27 +8,27 @@ interface Props {
 
 const { role, activeMenu = '' } = Astro.props;
 
-const menus: Record<string, { label: string; href: string; icon: string }[]> = {
+const menus: Record<string, { label: string; href: string; icon: any }[]> = {
   seller: [
-    { label: 'Dashboard', href: '/dashboard/seller', icon: '📊' },
-    { label: 'My Accounts', href: '/dashboard/seller/accounts', icon: '🗂️' },
-    { label: 'Sold Accounts', href: '/dashboard/seller/sold', icon: '✅' },
-    { label: 'Marketplace', href: '/shop', icon: '🛒' },
-    { label: 'Revenue', href: '/dashboard/seller/revenue', icon: '💰' },
-    { label: 'Settings', href: '/dashboard/seller/settings', icon: '⚙️' },
+    { label: 'Dashboard', href: '/dashboard/seller', icon: LayoutDashboard },
+    { label: 'My Accounts', href: '/dashboard/seller/accounts', icon: Folder },
+    { label: 'Sold Accounts', href: '/dashboard/seller/sold', icon: CheckCircle },
+    { label: 'Marketplace', href: '/shop', icon: ShoppingCart },
+    { label: 'Revenue', href: '/dashboard/seller/revenue', icon: CircleDollarSign },
+    { label: 'Settings', href: '/dashboard/seller/settings', icon: Settings },
   ],
   buyer: [
-    { label: 'Dashboard', href: '/dashboard/buyer', icon: '🏠' },
-    { label: 'My Orders', href: '/dashboard/buyer/orders', icon: '📦' },
-    { label: 'Browse Shop', href: '/shop', icon: '🛒' },
-    { label: 'Settings', href: '/dashboard/buyer/settings', icon: '⚙️' },
+    { label: 'Dashboard', href: '/dashboard/buyer', icon: Home },
+    { label: 'My Orders', href: '/dashboard/buyer/orders', icon: Package },
+    { label: 'Browse Shop', href: '/shop', icon: ShoppingCart },
+    { label: 'Settings', href: '/dashboard/buyer/settings', icon: Settings },
   ],
   admin: [
-    { label: 'Dashboard', href: '/dashboard/admin', icon: '📊' },
-    { label: 'User Management', href: '/dashboard/admin/users', icon: '👥' },
-    { label: 'Seller Analytics', href: '/dashboard/admin/sellers', icon: '📈' },
-    { label: 'Orders', href: '/dashboard/admin/orders', icon: '📦' },
-    { label: 'Platform Stats', href: '/dashboard/admin/stats', icon: '🔢' },
+    { label: 'Dashboard', href: '/dashboard/admin', icon: LayoutDashboard },
+    { label: 'User Management', href: '/dashboard/admin/users', icon: Users },
+    { label: 'Seller Analytics', href: '/dashboard/admin/sellers', icon: LineChart },
+    { label: 'Orders', href: '/dashboard/admin/orders', icon: Package },
+    { label: 'Platform Stats', href: '/dashboard/admin/stats', icon: Hash },
   ],
 };
 
@@ -46,21 +48,24 @@ const items = menus[role];
 
   <!-- Menu items -->
   <nav style="flex:1; padding:0 12px;">
-    {items.map(item => (
+    {items.map(item => {
+      const Icon = item.icon;
+      return (
       <a
         href={item.href}
         class={`sidebar-link ${activeMenu === item.label ? 'active' : ''}`}
       >
-        <span style="font-size:18px;">{item.icon}</span>
+        <span style="display:flex; align-items:center;"><Icon size={18} strokeWidth={2} /></span>
         <span>{item.label}</span>
       </a>
-    ))}
+      )
+    })}
   </nav>
 
   <!-- Logout -->
   <div style="padding:16px 12px;">
     <button id="sidebar-logout" class="sidebar-link" style="width:100%; border:none; cursor:pointer; background:none; text-align:left;">
-      <span style="font-size:18px;">🚪</span>
+      <span style="display:flex; align-items:center;"><LogOut size={18} /></span>
       <span>Logout</span>
     </button>
   </div>
@@ -102,7 +107,7 @@ const items = menus[role];
 </style>
 
 <script>
-  import { supabase } from '../lib/supabase';
+  import { supabase } from '../lib/supabase-browser';
   document.getElementById('sidebar-logout')?.addEventListener('click', async () => {
     await supabase.auth.signOut();
     window.location.href = '/login';
