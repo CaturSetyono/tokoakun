@@ -1,0 +1,65 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import { supabase } from '../../../lib/supabase';
+
+const { data: { user } } = await supabase.auth.getUser();
+
+const { data: soldAccounts } = await supabase
+  .from('accounts')
+  .select('id, title, category, price, sold_at, buyer_id, users!buyer_id(name, email)')
+  .eq('seller_id', user?.id ?? '')
+  .eq('status', 'sold')
+  .order('sold_at', { ascending: false });
+---
+
+<DashboardLayout title="Sold Accounts" role="seller" activeMenu="Sold Accounts">
+  <div>
+    <div style="margin-bottom:28px;">
+      <h1 style="font-size:24px; font-weight:700; margin:0 0 4px;">Akun Terjual</h1>
+      <p style="color:var(--text-secondary); font-size:14px; margin:0;">{soldAccounts?.length ?? 0} akun berhasil dijual</p>
+    </div>
+
+    <div class="card" style="overflow:hidden;">
+      {soldAccounts && soldAccounts.length > 0 ? (
+        <table style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border-color); background:var(--bg-secondary);">
+              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Akun</th>
+              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Kategori</th>
+              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Harga</th>
+              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Pembeli</th>
+              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Tgl Terjual</th>
+            </tr>
+          </thead>
+          <tbody>
+            {soldAccounts.map((acc: any) => {
+              const price = new Intl.NumberFormat('id-ID', { style:'currency', currency:'IDR', minimumFractionDigits:0 }).format(acc.price);
+              const date = acc.sold_at ? new Date(acc.sold_at).toLocaleDateString('id-ID') : '-';
+              return (
+                <tr style="border-bottom:1px solid var(--border-color);" class="table-row">
+                  <td style="padding:14px 20px; font-size:14px; font-weight:500;">{acc.title}</td>
+                  <td style="padding:14px 20px;">
+                    <span style="font-size:12px; background:rgba(166,255,0,0.1); color:var(--accent); padding:3px 10px; border-radius:20px;">{acc.category}</span>
+                  </td>
+                  <td style="padding:14px 20px; font-size:14px; font-weight:600;">{price}</td>
+                  <td style="padding:14px 20px; font-size:13px; color:var(--text-secondary);">{acc.users?.name ?? '-'}</td>
+                  <td style="padding:14px 20px; font-size:13px; color:var(--text-secondary);">{date}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      ) : (
+        <div style="text-align:center; padding:60px; color:var(--text-secondary);">
+          <div style="font-size:40px; margin-bottom:12px;">📭</div>
+          <p>Belum ada akun yang terjual.</p>
+        </div>
+      )}
+    </div>
+  </div>
+</DashboardLayout>
+
+<style>
+  .table-row:hover { background: var(--bg-secondary); }
+  .table-row:last-child { border-bottom: none; }
+</style>

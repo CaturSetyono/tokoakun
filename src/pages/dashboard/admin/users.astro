@@ -1,0 +1,89 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import { supabase } from '../../../lib/supabase';
+
+const { data: users } = await supabase
+  .from('users')
+  .select('id, name, email, role, created_at')
+  .order('created_at', { ascending: false });
+
+const roleColor: Record<string, string> = {
+  admin: '#8b5cf6',
+  seller: '#3b82f6',
+  buyer: '#22c55e',
+};
+---
+
+<DashboardLayout title="User Management" role="admin" activeMenu="User Management">
+  <div>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:28px;">
+      <div>
+        <h1 style="font-size:24px; font-weight:700; margin:0 0 4px;">User Management</h1>
+        <p style="color:var(--text-secondary); font-size:14px; margin:0;">{users?.length ?? 0} users terdaftar</p>
+      </div>
+    </div>
+
+    <div class="card" style="overflow:hidden;">
+      {users && users.length > 0 ? (
+        <table style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border-color); background:var(--bg-secondary);">
+              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Nama</th>
+              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Email</th>
+              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Role</th>
+              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Bergabung</th>
+              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(users ?? []).map((u) => {
+              const date = new Date(u.created_at).toLocaleDateString('id-ID');
+              return (
+                <tr style="border-bottom:1px solid var(--border-color);" class="table-row">
+                  <td style="padding:14px 20px; font-size:14px; font-weight:500;">{u.name}</td>
+                  <td style="padding:14px 20px; font-size:13px; color:var(--text-secondary);">{u.email}</td>
+                  <td style="padding:14px 20px;">
+                    <span style={`font-size:12px; padding:3px 10px; border-radius:20px; font-weight:600; background:${roleColor[u.role] ?? '#555'}22; color:${roleColor[u.role] ?? '#555'};`}>
+                      {u.role}
+                    </span>
+                  </td>
+                  <td style="padding:14px 20px; font-size:13px; color:var(--text-secondary);">{date}</td>
+                  <td style="padding:14px 20px;">
+                    <button
+                      class="btn-outline delete-user-btn"
+                      data-id={u.id}
+                      style="padding:5px 12px; font-size:12px; color:#ef4444; border-color:#ef4444;"
+                    >
+                      Hapus
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      ) : (
+        <div style="text-align:center; padding:60px; color:var(--text-secondary);">Belum ada user.</div>
+      )}
+    </div>
+  </div>
+</DashboardLayout>
+
+<style>
+  .table-row:hover { background: var(--bg-secondary); }
+  .table-row:last-child { border-bottom: none; }
+</style>
+
+<script>
+  import { supabase } from '../../../lib/supabase';
+
+  document.querySelectorAll<HTMLButtonElement>('.delete-user-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Hapus user ini? Aksi ini tidak dapat dibatalkan.')) return;
+      const id = btn.dataset.id!;
+      const { error } = await supabase.from('users').delete().eq('id', id);
+      if (error) alert('Gagal: ' + error.message);
+      else window.location.reload();
+    });
+  });
+</script>

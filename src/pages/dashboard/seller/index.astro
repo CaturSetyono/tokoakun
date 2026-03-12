@@ -1,0 +1,64 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import { supabase } from '../../../lib/supabase';
+
+// Stats
+const { count: totalAvailable } = await supabase
+  .from('accounts')
+  .select('*', { count: 'exact', head: true })
+  .eq('status', 'available');
+
+const { count: totalSold } = await supabase
+  .from('accounts')
+  .select('*', { count: 'exact', head: true })
+  .eq('status', 'sold');
+
+// Revenue from sold accounts
+const { data: soldPrices } = await supabase
+  .from('order_items')
+  .select('price, orders!inner(status)')
+  .eq('orders.status', 'paid');
+
+const totalRevenue = soldPrices?.reduce((sum: number, r: any) => sum + (r.price ?? 0), 0) ?? 0;
+
+const formattedRevenue = new Intl.NumberFormat('id-ID', {
+  style: 'currency',
+  currency: 'IDR',
+  minimumFractionDigits: 0,
+}).format(totalRevenue);
+---
+
+<DashboardLayout title="Seller Dashboard" role="seller" activeMenu="Dashboard">
+  <div>
+    <h1 style="font-size:24px; font-weight:700; margin:0 0 6px;">Dashboard</h1>
+    <p style="color:var(--text-secondary); font-size:14px; margin:0 0 32px;">Ringkasan aktivitas toko kamu</p>
+
+    <!-- Stats cards -->
+    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; margin-bottom:40px;">
+      {[
+        { label: 'Akun Tersedia', value: totalAvailable ?? 0, icon: '🗂️', color: '#3b82f6' },
+        { label: 'Akun Terjual', value: totalSold ?? 0, icon: '✅', color: '#22c55e' },
+        { label: 'Total Revenue', value: formattedRevenue, icon: '💰', color: '#a6ff00' },
+      ].map(stat => (
+        <div class="card" style="padding:24px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+            <span style="font-size:13px; color:var(--text-secondary); font-weight:500;">{stat.label}</span>
+            <span style="font-size:24px;">{stat.icon}</span>
+          </div>
+          <div style={`font-size:28px; font-weight:700; color:${stat.color};`}>{stat.value}</div>
+        </div>
+      ))}
+    </div>
+
+    <!-- Quick actions -->
+    <div class="card" style="padding:24px;">
+      <h2 style="font-size:16px; font-weight:600; margin:0 0 16px;">Aksi Cepat</h2>
+      <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <a href="/dashboard/seller/accounts/add" class="btn-accent" style="font-size:13px;">+ Tambah Akun</a>
+        <a href="/dashboard/seller/accounts" class="btn-outline" style="font-size:13px;">Kelola Akun</a>
+        <a href="/dashboard/seller/sold" class="btn-outline" style="font-size:13px;">Lihat Terjual</a>
+        <a href="/dashboard/seller/revenue" class="btn-outline" style="font-size:13px;">Laporan Revenue</a>
+      </div>
+    </div>
+  </div>
+</DashboardLayout>

@@ -1,0 +1,133 @@
+---
+import PublicLayout from '../../layouts/PublicLayout.astro';
+import AccountCard from '../../components/AccountCard.astro';
+import { supabase } from '../../lib/supabase';
+
+const pageSize = 8;
+const page = Number(Astro.url.searchParams.get('page') ?? '1');
+const category = Astro.url.searchParams.get('category') ?? '';
+const search = Astro.url.searchParams.get('q') ?? '';
+
+const offset = (page - 1) * pageSize;
+
+let query = supabase
+  .from('accounts')
+  .select('id, title, category, price, thumbnail_url, seller_id, users!seller_id(name)', { count: 'exact' })
+  .eq('status', 'available')
+  .order('created_at', { ascending: false })
+  .range(offset, offset + pageSize - 1);
+
+if (category) query = query.eq('category', category);
+if (search) query = query.ilike('title', `%${search}%`);
+
+const { data: accounts, count } = await query;
+
+// Get distinct categories for filter
+const { data: catRows } = await supabase
+  .from('accounts')
+  .select('category')
+  .eq('status', 'available');
+
+const categories = [...new Set(catRows?.map((r: any) => r.category) ?? [])].sort();
+
+const totalPages = Math.ceil((count ?? 0) / pageSize);
+
+function buildUrl(p: number, cat?: string, q?: string) {
+  const params = new URLSearchParams();
+  if (p > 1) params.set('page', String(p));
+  if (cat ?? category) params.set('category', cat ?? category);
+  if (q ?? search) params.set('q', q ?? search);
+  return '/shop' + (params.toString() ? '?' + params.toString() : '');
+}
+---
+
+<PublicLayout title="Shop">
+  <section style="padding:60px 0 80px; min-height:80vh; background:var(--bg-secondary);">
+    <div class="container">
+      <!-- Header -->
+      <div style="margin-bottom:36px;">
+        <h1 style="font-size:32px; font-weight:700; margin:0 0 6px;">Marketplace</h1>
+        <p style="color:var(--text-secondary); font-size:14px; margin:0;">
+          {count ?? 0} akun tersedia
+        </p>
+      </div>
+
+      <!-- Filters -->
+      <div style="display:flex; gap:12px; margin-bottom:32px; flex-wrap:wrap; align-items:center;">
+        <!-- Search -->
+        <form method="GET" action="/shop" style="flex:1; min-width:200px; max-width:320px;">
+          <input
+            type="text"
+            name="q"
+            value={search}
+            placeholder="Cari akun..."
+            style="width:100%; padding:10px 14px; border:1px solid var(--border-color); border-radius:10px; background:var(--card-bg); color:var(--text-primary); font-size:14px; font-family:inherit; outline:none; box-sizing:border-box;"
+          />
+          {category && <input type="hidden" name="category" value={category} />}
+        </form>
+
+        <!-- Category filter -->
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <a
+            href={buildUrl(1, '')}
+            style={`font-size:13px; padding:7px 14px; border-radius:20px; text-decoration:none; font-weight:500; transition:all 0.2s; border:1px solid ${!category ? 'var(--accent)' : 'var(--border-color)'}; background:${!category ? 'var(--accent)' : 'transparent'}; color:${!category ? '#111' : 'var(--text-secondary)'};`}
+          >
+            Semua
+          </a>
+          {categories.map((cat: string) => (
+            <a
+              href={buildUrl(1, cat)}
+              style={`font-size:13px; padding:7px 14px; border-radius:20px; text-decoration:none; font-weight:500; transition:all 0.2s; border:1px solid ${category === cat ? 'var(--accent)' : 'var(--border-color)'}; background:${category === cat ? 'var(--accent)' : 'transparent'}; color:${category === cat ? '#111' : 'var(--text-secondary)'};`}
+            >
+              {cat}
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <!-- Grid -->
+      {accounts && accounts.length > 0 ? (
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:20px; margin-bottom:40px;">
+          {accounts.map((acc: any) => (
+            <AccountCard
+              id={acc.id}
+              title={acc.title}
+              category={acc.category}
+              price={acc.price}
+              sellerName={acc.users?.name ?? 'Unknown'}
+              thumbnailUrl={acc.thumbnail_url}
+            />
+          ))}
+        </div>
+      ) : (
+        <div style="text-align:center; padding:80px 0; color:var(--text-secondary);">
+          <div style="font-size:48px; margin-bottom:16px;">🔍</div>
+          <p style="font-size:16px;">Tidak ada akun yang ditemukan.</p>
+          {(search || category) && (
+            <a href="/shop" style="color:var(--accent); font-size:14px;">Reset filter</a>
+          )}
+        </div>
+      )}
+
+      <!-- Pagination -->
+      {totalPages > 1 && (
+        <div style="display:flex; justify-content:center; gap:8px;">
+          {page > 1 && (
+            <a href={buildUrl(page - 1)} class="btn-outline" style="padding:8px 16px; font-size:13px;">← Prev</a>
+          )}
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+            <a
+              href={buildUrl(p)}
+              style={`padding:8px 14px; border-radius:8px; font-size:13px; text-decoration:none; font-weight:500; border:1px solid ${p === page ? 'var(--accent)' : 'var(--border-color)'}; background:${p === page ? 'var(--accent)' : 'transparent'}; color:${p === page ? '#111' : 'var(--text-secondary)'};`}
+            >
+              {p}
+            </a>
+          ))}
+          {page < totalPages && (
+            <a href={buildUrl(page + 1)} class="btn-outline" style="padding:8px 16px; font-size:13px;">Next →</a>
+          )}
+        </div>
+      )}
+    </div>
+  </section>
+</PublicLayout>

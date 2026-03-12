@@ -1,0 +1,108 @@
+---
+// Navbar component
+---
+
+<nav id="navbar">
+  <div class="container" style="display:flex; align-items:center; justify-content:space-between; height:64px;">
+    <!-- Logo -->
+    <a href="/" style="font-size:22px; font-weight:700; text-decoration:none;">
+      <span class="gradient-text">TOKO</span><span style="color:var(--text-primary);">AKUN</span>
+    </a>
+
+    <!-- Nav links (center) -->
+    <ul style="display:flex; gap:32px; list-style:none; margin:0; padding:0;" id="nav-links">
+      <li><a href="/" class="nav-link">Home</a></li>
+      <li><a href="/about" class="nav-link">About Us</a></li>
+      <li><a href="/shop" class="nav-link">Shop</a></li>
+      <li><a href="/contact" class="nav-link">Contact</a></li>
+    </ul>
+
+    <!-- Right: theme toggle + auth -->
+    <div style="display:flex; align-items:center; gap:12px;">
+      <button id="theme-toggle" aria-label="Toggle theme" style="background:none; border:1px solid var(--border-color); border-radius:8px; width:36px; height:36px; cursor:pointer; font-size:16px; color:var(--text-primary); display:flex; align-items:center; justify-content:center;">
+        <span id="theme-icon">☀</span>
+      </button>
+
+      <div id="auth-buttons">
+        <a href="/login" class="btn-outline" style="padding:8px 16px; font-size:13px;">Login</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<style>
+  #navbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--nav-bg);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .nav-link {
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+  .nav-link:hover {
+    color: var(--accent);
+  }
+</style>
+
+<script>
+  // Theme toggle
+  const toggle = document.getElementById('theme-toggle')!;
+  const icon = document.getElementById('theme-icon')!;
+
+  function updateIcon() {
+    icon.textContent = document.documentElement.classList.contains('dark') ? '☀' : '🌙';
+  }
+  updateIcon();
+
+  toggle.addEventListener('click', () => {
+    document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+    updateIcon();
+  });
+
+  // Highlight active nav link
+  const links = document.querySelectorAll<HTMLAnchorElement>('.nav-link');
+  links.forEach(link => {
+    if (link.href === window.location.href) {
+      link.style.color = 'var(--accent)';
+    }
+  });
+
+  // Auth state: show dashboard link if logged in
+  import { supabase } from '../lib/supabase';
+
+  const { data: { user } } = await supabase.auth.getUser();
+  const authDiv = document.getElementById('auth-buttons')!;
+
+  if (user) {
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    const role = profile?.role ?? 'buyer';
+    const dashPath = role === 'admin'
+      ? '/dashboard/admin'
+      : role === 'seller'
+        ? '/dashboard/seller'
+        : '/dashboard/buyer';
+
+    authDiv.innerHTML = `
+      <a href="${dashPath}" class="btn-outline" style="padding:8px 16px; font-size:13px; margin-right:8px;">Dashboard</a>
+      <button id="logout-btn" class="btn-accent" style="padding:8px 16px; font-size:13px;">Logout</button>
+    `;
+    document.getElementById('logout-btn')?.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      window.location.href = '/';
+    });
+  }
+</script>

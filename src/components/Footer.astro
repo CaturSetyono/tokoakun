@@ -1,0 +1,63 @@
+---
+// Footer component
+---
+
+<footer style="background: var(--bg-secondary); border-top: 1px solid var(--border-color); padding: 60px 0 32px;">
+  <div class="container">
+    <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:48px; margin-bottom:48px;">
+      <!-- Brand -->
+      <div>
+        <div style="font-size:32px; font-weight:700; margin-bottom:16px;">
+          <span class="gradient-text">TOKO</span><span style="color:var(--text-primary);">AKUN</span>
+        </div>
+        <p style="color:var(--text-secondary); font-size:14px; line-height:1.7; max-width:320px;">
+          Platform jual beli akun digital yang aman, cepat, dan otomatis. Dapatkan akun premium favoritmu dalam hitungan menit.
+        </p>
+      </div>
+
+      <!-- Links -->
+      <div>
+        <h4 style="font-size:14px; font-weight:600; margin-bottom:16px; color:var(--text-primary);">Navigation</h4>
+        <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px;">
+          <li><a href="/" class="footer-link">Home</a></li>
+          <li><a href="/shop" class="footer-link">Shop</a></li>
+          <li><a href="/about" class="footer-link">About Us</a></li>
+          <li><a href="/contact" class="footer-link">Contact</a></li>
+        </ul>
+      </div>
+
+      <!-- Account -->
+      <div>
+        <h4 style="font-size:14px; font-weight:600; margin-bottom:16px; color:var(--text-primary);">Account</h4>
+        <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px;">
+          <li><a href="/login" class="footer-link">Login</a></li>
+          <li><a href="/register" class="footer-link">Register</a></li>
+          <li><a href="/dashboard/buyer" class="footer-link">My Orders</a></li>
+          <li><a href="/dashboard/seller" class="footer-link">Sell Account</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Bottom bar -->
+    <div style="padding-top:24px; border-top:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between;">
+      <p style="font-size:13px; color:var(--text-secondary); margin:0;">
+        &copy; 2026 TokoAkun. All rights reserved.
+      </p>
+      <p style="font-size:13px; color:var(--text-secondary); margin:0;">
+        Powered by <span style="color:var(--accent); font-weight:600;">Mayar.id</span>
+      </p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer-link {
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 14px;
+    transition: color 0.2s;
+  }
+  .footer-link:hover {
+    color: var(--accent);
+  }
+</style>

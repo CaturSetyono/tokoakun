@@ -1,0 +1,122 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import { supabase } from '../../../lib/supabase';
+
+const userId = Astro.locals.userId as string;
+
+// Revenue per month (current year)
+const currentYear = new Date().getFullYear();
+const { data: monthlyOrders } = await supabase
+  .from('order_items')
+  .select(`
+    price,
+    orders!inner(status, created_at),
+    accounts!inner(seller_id)
+  `)
+  .eq('accounts.seller_id', userId)
+  .eq('orders.status', 'paid')
+  .gte('orders.created_at', `${currentYear}-01-01`)
+  .lte('orders.created_at', `${currentYear}-12-31`);
+
+// Aggregate by month
+const monthlyRevenue: Record<number, number> = {};
+for (let m = 1; m <= 12; m++) monthlyRevenue[m] = 0;
+
+for (const item of monthlyOrders ?? []) {
+  const month = new Date((item as any).orders.created_at).getMonth() + 1;
+  monthlyRevenue[month] = (monthlyRevenue[month] ?? 0) + item.price;
+}
+
+const totalRevenue = Object.values(monthlyRevenue).reduce((a, b) => a + b, 0);
+const maxMonthly = Math.max(...Object.values(monthlyRevenue), 1);
+
+// Recent paid orders
+const { data: recentOrders } = await supabase
+  .from('order_items')
+  .select(`
+    id, price, created_at,
+    orders!inner(id, status, created_at, users!buyer_id(name)),
+    accounts!inner(title, seller_id)
+  `)
+  .eq('accounts.seller_id', userId)
+  .eq('orders.status', 'paid')
+  .order('created_at', { ascending: false })
+  .limit(15);
+
+const monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+
+function formatIDR(n: number) {
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
+}
+---
+
+<DashboardLayout title="Pendapatan" role="seller" activeMenu="revenue">
+  <div class="space-y-6">
+    <!-- Header -->
+    <div>
+      <h1 class="text-2xl font-bold">Laporan Pendapatan</h1>
+      <p class="text-sm opacity-60 mt-1">Tahun {currentYear}</p>
+    </div>
+
+    <!-- Total Revenue Card -->
+    <div class="card p-6 bg-gradient-to-br from-accent/20 to-accent/5">
+      <p class="text-sm opacity-70 font-medium">Total Pendapatan {currentYear}</p>
+      <p class="text-4xl font-bold mt-2 gradient-text">{formatIDR(totalRevenue)}</p>
+    </div>
+
+    <!-- Bar Chart -->
+    <div class="card p-6">
+      <h2 class="font-semibold mb-4">Grafik Bulanan</h2>
+      <div class="flex items-end gap-2 h-40">
+        {Object.entries(monthlyRevenue).map(([month, amount]) => {
+          const pct = maxMonthly > 0 ? Math.round((amount / maxMonthly) * 100) : 0;
+          const isCurrentMonth = parseInt(month) === new Date().getMonth() + 1;
+          return (
+            <div class="flex flex-col items-center flex-1 gap-1">
+              <span class="text-xs opacity-60">{amount > 0 ? formatIDR(amount).replace('Rp\u00a0','') : ''}</span>
+              <div
+                class={`w-full rounded-t transition-all ${isCurrentMonth ? 'bg-accent' : 'bg-accent/40'}`}
+                style={`height: ${Math.max(pct, 2)}%`}
+                title={formatIDR(amount)}
+              ></div>
+              <span class="text-xs opacity-60">{monthNames[parseInt(month) - 1]}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="card p-6">
+      <h2 class="font-semibold mb-4">Transaksi Terbaru</h2>
+      {(recentOrders?.length ?? 0) === 0 ? (
+        <p class="text-sm opacity-60 text-center py-8">Belum ada transaksi</p>
+      ) : (
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-white/10">
+                <th class="text-left py-2 pr-4 font-medium opacity-70">Akun</th>
+                <th class="text-left py-2 pr-4 font-medium opacity-70">Pembeli</th>
+                <th class="text-left py-2 pr-4 font-medium opacity-70">Tanggal</th>
+                <th class="text-right py-2 font-medium opacity-70">Pendapatan</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentOrders?.map(item => (
+                <tr class="border-b border-white/5 hover:bg-white/5 transition">
+                  <td class="py-3 pr-4">{(item as any).accounts?.title}</td>
+                  <td class="py-3 pr-4 opacity-70">{(item as any).orders?.users?.name ?? '-'}</td>
+                  <td class="py-3 pr-4 opacity-70">
+                    {new Date((item as any).orders?.created_at).toLocaleDateString('id-ID')}
+                  </td>
+                  <td class="py-3 text-right font-semibold text-accent">{formatIDR(item.price)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  </div>
+</DashboardLayout>

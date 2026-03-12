@@ -1,0 +1,36 @@
+---
+import '../styles/global.css';
+import DashboardSidebar from '../components/DashboardSidebar.astro';
+
+interface Props {
+  title: string;
+  role: 'admin' | 'seller' | 'buyer';
+  activeMenu?: string;
+}
+
+const { title, role, activeMenu = '' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} | Toko Akun</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script is:inline>
+      const saved = localStorage.getItem('theme');
+      if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+    </script>
+  </head>
+  <body style="background: var(--bg-secondary);">
+    <div style="display: flex; min-height: 100vh;">
+      <DashboardSidebar role={role} activeMenu={activeMenu} />
+      <div style="flex: 1; padding: 32px; overflow-y: auto;">
+        <slot />
+      </div>
+    </div>
+  </body>
+</html>

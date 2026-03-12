@@ -1,0 +1,209 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import AccountCard from '../components/AccountCard.astro';
+import SellerCard from '../components/SellerCard.astro';
+import { supabase } from '../lib/supabase';
+
+// Fetch latest 8 available accounts
+const { data: featuredAccounts } = await supabase
+  .from('accounts')
+  .select('id, title, category, price, thumbnail_url, seller_id, users!seller_id(name)')
+  .eq('status', 'available')
+  .order('created_at', { ascending: false })
+  .limit(8);
+
+// Top sellers by sold count
+const { data: topSellers } = await supabase
+  .from('accounts')
+  .select('seller_id, users!seller_id(id, name)')
+  .eq('status', 'sold')
+  .limit(100);
+
+// Aggregate sold counts
+const sellerMap = new Map<string, { id: string; name: string; count: number }>();
+topSellers?.forEach((a: any) => {
+  const s = a.users;
+  if (!s) return;
+  const curr = sellerMap.get(s.id);
+  if (curr) curr.count++;
+  else sellerMap.set(s.id, { id: s.id, name: s.name, count: 1 });
+});
+const topSellerList = [...sellerMap.values()]
+  .sort((a, b) => b.count - a.count)
+  .slice(0, 4);
+---
+
+<PublicLayout title="Home">
+  <!-- ── Hero ─────────────────────────────────── -->
+  <section style="padding: 100px 0 80px; background: var(--bg-primary);">
+    <div class="container" style="display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:center;">
+      <!-- Left -->
+      <div>
+        <div style="display:inline-block; background:rgba(166,255,0,0.1); color:var(--accent); font-size:12px; font-weight:600; padding:5px 14px; border-radius:20px; margin-bottom:20px; letter-spacing:0.05em; text-transform:uppercase;">
+          #1 Digital Account Marketplace
+        </div>
+        <h1 style="font-size:52px; font-weight:700; line-height:1.15; margin:0 0 20px; color:var(--text-primary);">
+          UNLEASH THE FUTURE OF<br/>
+          <span class="gradient-text">DIGITAL ACCOUNT</span><br/>
+          MARKETPLACE
+        </h1>
+        <p style="font-size:17px; color:var(--text-secondary); line-height:1.7; margin:0 0 36px; max-width:480px;">
+          Beli dan jual akun premium dengan aman, cepat, dan otomatis. Dapatkan akun streaming, game, atau layanan favoritmu dalam hitungan menit.
+        </p>
+        <div style="display:flex; gap:14px; flex-wrap:wrap;">
+          <a href="/register" class="btn-accent" style="padding:14px 28px; font-size:15px;">Get Started →</a>
+          <a href="/shop" class="btn-outline" style="padding:14px 28px; font-size:15px;">Browse Shop</a>
+        </div>
+
+        <!-- Stats -->
+        <div style="display:flex; gap:32px; margin-top:48px; padding-top:32px; border-top:1px solid var(--border-color);">
+          <div>
+            <div style="font-size:24px; font-weight:700; color:var(--text-primary);">Terverifikasi</div>
+            <div style="font-size:13px; color:var(--text-secondary);">Setiap Akun Dicek Manual</div>
+          </div>
+          <div>
+            <div style="font-size:24px; font-weight:700; color:var(--text-primary);">Aman</div>
+            <div style="font-size:13px; color:var(--text-secondary);">Pembayaran via Mayar.id</div>
+          </div>
+          <div>
+            <div style="font-size:24px; font-weight:700; color:var(--text-primary);">Instan</div>
+            <div style="font-size:13px; color:var(--text-secondary);">Akun Langsung Diterima</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: illustration placeholder -->
+      <div style="display:flex; align-items:center; justify-content:center;">
+        <div style="width:420px; height:420px; border-radius:32px; background: linear-gradient(135deg, rgba(166,255,0,0.15), rgba(141,255,0,0.05)); border:1px solid rgba(166,255,0,0.2); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;">
+          <div style="font-size:80px;">🎮</div>
+          <div style="font-size:16px; font-weight:600; color:var(--text-primary);">Premium Digital Accounts</div>
+          <div style="font-size:13px; color:var(--text-secondary);">Netflix · Spotify · Steam · Disney+</div>
+          <div style="margin-top:8px; display:flex; gap:8px;">
+            <span style="background:rgba(166,255,0,0.15); color:var(--accent); font-size:12px; padding:4px 12px; border-radius:20px; font-weight:600;">Auto Delivery</span>
+            <span style="background:rgba(59,130,246,0.1); color:#3b82f6; font-size:12px; padding:4px 12px; border-radius:20px; font-weight:600;">Secure</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Featured Accounts ──────────────────── -->
+  <section class="section" style="background: var(--bg-secondary);">
+    <div class="container">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:40px;">
+        <div>
+          <h2 style="font-size:28px; font-weight:700; margin:0 0 6px;">Akun Terbaru</h2>
+          <p style="color:var(--text-secondary); margin:0; font-size:14px;">Akun premium yang baru saja ditambahkan</p>
+        </div>
+        <a href="/shop" class="btn-outline">Lihat Semua →</a>
+      </div>
+
+      {featuredAccounts && featuredAccounts.length > 0 ? (
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:20px;">
+          {featuredAccounts.map((acc: any) => (
+            <AccountCard
+              id={acc.id}
+              title={acc.title}
+              category={acc.category}
+              price={acc.price}
+              sellerName={acc.users?.name ?? 'Unknown'}
+              thumbnailUrl={acc.thumbnail_url}
+            />
+          ))}
+        </div>
+      ) : (
+        <div style="text-align:center; padding:60px; color:var(--text-secondary);">
+          <div style="font-size:40px; margin-bottom:12px;">🛍️</div>
+          <p>Belum ada akun yang tersedia. <a href="/register" style="color:var(--accent);">Jadi seller pertama!</a></p>
+        </div>
+      )}
+    </div>
+  </section>
+
+  <!-- ── Top Sellers ────────────────────────── -->
+  <section class="section" style="background: var(--bg-primary);">
+    <div class="container">
+      <div style="text-align:center; margin-bottom:40px;">
+        <h2 style="font-size:28px; font-weight:700; margin:0 0 6px;">Top Sellers</h2>
+        <p style="color:var(--text-secondary); margin:0; font-size:14px;">Seller terpercaya dengan penjualan terbanyak</p>
+      </div>
+
+      {topSellerList.length > 0 ? (
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; max-width:900px; margin:0 auto;">
+          {topSellerList.map((s, i) => (
+            <SellerCard
+              sellerId={s.id}
+              sellerName={s.name}
+              totalSold={s.count}
+              rank={i + 1}
+            />
+          ))}
+        </div>
+      ) : (
+        <div style="text-align:center; padding:40px; color:var(--text-secondary);">
+          Belum ada data penjualan.
+        </div>
+      )}
+    </div>
+  </section>
+
+  <!-- ── About ──────────────────────────────── -->
+  <section class="section" id="about" style="background: var(--bg-secondary);">
+    <div class="container" style="display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:center;">
+      <div>
+        <h2 style="font-size:32px; font-weight:700; margin:0 0 20px;">Kenapa TokoAkun?</h2>
+        <div style="display:flex; flex-direction:column; gap:20px;">
+          {[
+            { icon: '⚡', title: 'Auto Delivery', desc: 'Akun terkirim otomatis setelah pembayaran berhasil, tanpa perlu menunggu.' },
+            { icon: '🔒', title: 'Transaksi Aman', desc: 'Sistem pembayaran terintegrasi dengan verifikasi otomatis via Mayar.id.' },
+            { icon: '💼', title: 'Mudah Berjualan', desc: 'Seller bisa menambah dan mengelola stok akun dari dashboard yang simple.' },
+          ].map(item => (
+            <div style="display:flex; gap:16px; align-items:flex-start;">
+              <div style="width:44px; height:44px; background:rgba(166,255,0,0.1); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
+                {item.icon}
+              </div>
+              <div>
+                <h3 style="font-size:15px; font-weight:600; margin:0 0 4px;">{item.title}</h3>
+                <p style="font-size:13px; color:var(--text-secondary); margin:0; line-height:1.6;">{item.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style="background:var(--card-bg); border:1px solid var(--border-color); border-radius:20px; padding:32px;">
+        <h3 style="font-size:18px; font-weight:700; margin:0 0 20px;">Cara Kerja</h3>
+        {[
+          { step: '01', text: 'Pilih akun yang ingin dibeli' },
+          { step: '02', text: 'Klik Beli & selesaikan pembayaran' },
+          { step: '03', text: 'Akun otomatis terkirim via email' },
+          { step: '04', text: 'Langsung gunakan akunmu!' },
+        ].map(item => (
+          <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px;">
+            <div style="min-width:36px; height:36px; border-radius:50%; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#111;">
+              {item.step}
+            </div>
+            <span style="font-size:14px; color:var(--text-primary);">{item.text}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Contact ────────────────────────────── -->
+  <section class="section" id="contact" style="background: var(--bg-primary);">
+    <div class="container" style="max-width:600px; text-align:center;">
+      <h2 style="font-size:32px; font-weight:700; margin:0 0 12px;">Butuh Bantuan?</h2>
+      <p style="color:var(--text-secondary); font-size:15px; margin:0 0 32px;">
+        Hubungi kami jika ada pertanyaan seputar transaksi atau akun kamu.
+      </p>
+      <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+        <a href="mailto:support@tokoakun.id" class="btn-accent" style="padding:12px 24px;">
+          📧 Email Kami
+        </a>
+        <a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer" class="btn-outline" style="padding:12px 24px;">
+          💬 WhatsApp
+        </a>
+      </div>
+    </div>
+  </section>
+</PublicLayout>

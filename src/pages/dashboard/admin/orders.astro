@@ -1,0 +1,77 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import { supabase } from '../../../lib/supabase';
+
+const { data: orders } = await supabase
+  .from('orders')
+  .select('id, total_price, status, created_at, buyer_id, users!buyer_id(name, email)')
+  .order('created_at', { ascending: false })
+  .limit(100);
+
+const statusStyle: Record<string, string> = {
+  paid: 'background:rgba(34,197,94,0.1); color:#22c55e;',
+  pending: 'background:rgba(234,179,8,0.1); color:#eab308;',
+  cancelled: 'background:rgba(239,68,68,0.1); color:#ef4444;',
+};
+
+function formatOrder(o: { total_price: number; created_at: string }) {
+  return {
+    total: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(o.total_price),
+    date: new Date(o.created_at).toLocaleDateString('id-ID'),
+  };
+}
+---
+
+<DashboardLayout title="All Orders" role="admin" activeMenu="Orders">
+  <div>
+    <div style="margin-bottom:28px;">
+      <h1 style="font-size:24px; font-weight:700; margin:0 0 4px;">Semua Order</h1>
+      <p style="color:var(--text-secondary); font-size:14px; margin:0;">{orders?.length ?? 0} order</p>
+    </div>
+
+    <div class="card" style="overflow:hidden;">
+      {orders && orders.length > 0 ? (
+        <table style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border-color); background:var(--bg-secondary);">
+              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Order ID</th>
+              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Buyer</th>
+              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Total</th>
+              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Status</th>
+              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Tanggal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(orders ?? []).map((o) => {
+              const row = o as any;
+              const { total, date } = formatOrder(row);
+              return (
+                <tr style="border-bottom:1px solid var(--border-color);" class="table-row">
+                  <td style="padding:14px 20px; font-size:12px; font-family:monospace; color:var(--text-secondary);">{row.id.slice(0, 12)}...</td>
+                  <td style="padding:14px 20px; font-size:13px;">
+                    <div style="font-weight:500;">{row.users?.name ?? '-'}</div>
+                    <div style="color:var(--text-secondary); font-size:12px;">{row.users?.email ?? '-'}</div>
+                  </td>
+                  <td style="padding:14px 20px; font-size:14px; font-weight:600;">{total}</td>
+                  <td style="padding:14px 20px;">
+                    <span style={`font-size:12px; padding:3px 10px; border-radius:20px; font-weight:600; ${statusStyle[row.status] ?? ''}`}>
+                      {row.status}
+                    </span>
+                  </td>
+                  <td style="padding:14px 20px; font-size:13px; color:var(--text-secondary);">{date}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      ) : (
+        <div style="text-align:center; padding:60px; color:var(--text-secondary);">Belum ada order.</div>
+      )}
+    </div>
+  </div>
+</DashboardLayout>
+
+<style>
+  .table-row:hover { background: var(--bg-secondary); }
+  .table-row:last-child { border-bottom: none; }
+</style>

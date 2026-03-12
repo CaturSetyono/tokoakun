@@ -1,0 +1,164 @@
+---
+import PublicLayout from '../../layouts/PublicLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+const { id } = Astro.params;
+
+const { data: account } = await supabase
+  .from('accounts')
+  .select('id, title, category, price, thumbnail_url, status, created_at, seller_id, users!seller_id(id, name)')
+  .eq('id', id!)
+  .single();
+
+if (!account) {
+  return Astro.redirect('/shop');
+}
+
+const formatted = new Intl.NumberFormat('id-ID', {
+  style: 'currency',
+  currency: 'IDR',
+  minimumFractionDigits: 0,
+}).format(account.price);
+
+const isAvailable = account.status === 'available';
+---
+
+<PublicLayout title={account.title}>
+  <section style="padding:60px 0 80px; background:var(--bg-secondary); min-height:80vh;">
+    <div class="container" style="max-width:900px;">
+      <!-- Breadcrumb -->
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:28px; font-size:13px; color:var(--text-secondary);">
+        <a href="/" style="color:var(--text-secondary); text-decoration:none;">Home</a>
+        <span>/</span>
+        <a href="/shop" style="color:var(--text-secondary); text-decoration:none;">Shop</a>
+        <span>/</span>
+        <span style="color:var(--text-primary);">{account.title}</span>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:start;">
+        <!-- Thumbnail -->
+        <div>
+          <div class="card" style="padding:0; overflow:hidden; aspect-ratio:4/3;">
+            {account.thumbnail_url
+              ? <img src={account.thumbnail_url} alt={account.title} style="width:100%; height:100%; object-fit:cover;" />
+              : <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:64px; background:var(--bg-secondary);">🎮</div>
+            }
+          </div>
+        </div>
+
+        <!-- Detail -->
+        <div>
+          <span style="font-size:12px; font-weight:600; color:var(--accent); background:rgba(166,255,0,0.1); padding:4px 12px; border-radius:20px; text-transform:uppercase; letter-spacing:0.05em;">
+            {account.category}
+          </span>
+          <h1 style="font-size:26px; font-weight:700; margin:12px 0 8px; color:var(--text-primary);">{account.title}</h1>
+
+          <p style="font-size:13px; color:var(--text-secondary); margin:0 0 20px;">
+            Dijual oleh <strong style="color:var(--text-primary);">{(account as any).users?.name ?? 'Unknown'}</strong>
+          </p>
+
+          <div style="font-size:32px; font-weight:700; color:var(--text-primary); margin-bottom:24px;">
+            {formatted}
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:24px; font-size:13px; color:var(--text-secondary);">
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span>✅</span> Auto delivery setelah pembayaran
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span>🔒</span> Transaksi aman via Mayar.id
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span>📧</span> Akun dikirim via halaman pesanan
+            </div>
+          </div>
+
+          {isAvailable ? (
+            <button
+              id="buy-btn"
+              data-account-id={account.id}
+              class="btn-accent"
+              style="width:100%; padding:14px; font-size:15px; text-align:center;"
+            >
+              🛒 Beli Sekarang
+            </button>
+          ) : (
+            <div style="background:rgba(239,68,68,0.1); color:#ef4444; padding:14px; border-radius:12px; text-align:center; font-weight:600; font-size:15px;">
+              Akun Sudah Terjual
+            </div>
+          )}
+
+          <div id="buy-error" style="display:none; color:#ef4444; font-size:13px; margin-top:10px; padding:10px 14px; background:rgba(239,68,68,0.08); border-radius:8px;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</PublicLayout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  const buyBtn = document.getElementById('buy-btn') as HTMLButtonElement | null;
+  const errorDiv = document.getElementById('buy-error')!;
+
+  buyBtn?.addEventListener('click', async () => {
+    errorDiv.style.display = 'none';
+    buyBtn.textContent = 'Loading...';
+    buyBtn.disabled = true;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      window.location.href = `/login?redirectTo=${encodeURIComponent(window.location.pathname)}`;
+      return;
+    }
+
+    const accountId = buyBtn.dataset.accountId!;
+
+    // Create order
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        buyer_id: user.id,
+        total_price: 0, // will be set properly by Edge Function
+        status: 'pending',
+        mayar_payment_url: null,
+        mayar_invoice_id: null,
+      })
+      .select()
+      .single();
+
+    if (orderError || !order) {
+      errorDiv.textContent = 'Gagal membuat order: ' + (orderError?.message ?? 'Unknown error');
+      errorDiv.style.display = 'block';
+      buyBtn.textContent = '🛒 Beli Sekarang';
+      buyBtn.disabled = false;
+      return;
+    }
+
+    // Insert order item
+    await supabase.from('order_items').insert({
+      order_id: order.id,
+      account_id: accountId,
+      price: 0,
+    });
+
+    // Call Edge Function to create Mayar payment
+    const res = await fetch('/api/create-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId: order.id }),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok || !result.paymentUrl) {
+      errorDiv.textContent = result.error ?? 'Gagal membuat payment link.';
+      errorDiv.style.display = 'block';
+      buyBtn.textContent = '🛒 Beli Sekarang';
+      buyBtn.disabled = false;
+      return;
+    }
+
+    window.location.href = result.paymentUrl;
+  });
+</script>

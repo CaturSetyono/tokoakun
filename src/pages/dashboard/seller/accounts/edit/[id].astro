@@ -1,0 +1,126 @@
+---
+import DashboardLayout from '../../../../../layouts/DashboardLayout.astro';
+import { supabase } from '../../../../../lib/supabase';
+
+const { id } = Astro.params;
+
+const { data: account } = await supabase
+  .from('accounts')
+  .select('*')
+  .eq('id', id!)
+  .single();
+
+if (!account || account.status !== 'available') {
+  return Astro.redirect('/dashboard/seller/accounts');
+}
+---
+
+<DashboardLayout title="Edit Akun" role="seller" activeMenu="My Accounts">
+  <div style="max-width:600px;">
+    <div style="margin-bottom:28px;">
+      <h1 style="font-size:24px; font-weight:700; margin:0 0 4px;">Edit Akun</h1>
+      <p style="color:var(--text-secondary); font-size:14px; margin:0;">Update detail akun yang dijual</p>
+    </div>
+
+    <div class="card" style="padding:32px;">
+      <form id="edit-form">
+        <input type="hidden" id="account-id" value={account.id} />
+
+        <div class="form-group">
+          <label class="form-label">Judul Akun *</label>
+          <input type="text" id="title" class="form-input" value={account.title} required />
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div class="form-group">
+            <label class="form-label">Kategori *</label>
+            <input type="text" id="category" class="form-input" value={account.category} required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Harga (IDR) *</label>
+            <input type="number" id="price" class="form-input" value={account.price} min="1000" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email Akun *</label>
+          <input type="email" id="email_account" class="form-input" value={account.email_account} required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password Akun *</label>
+          <input type="text" id="password_account" class="form-input" value={account.password_account} required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Thumbnail URL (opsional)</label>
+          <input type="url" id="thumbnail_url" class="form-input" value={account.thumbnail_url ?? ''} />
+        </div>
+
+        <div id="error-msg" style="display:none; color:#ef4444; font-size:13px; margin-bottom:16px; padding:10px 14px; background:rgba(239,68,68,0.08); border-radius:8px;"></div>
+
+        <div style="display:flex; gap:12px;">
+          <button type="submit" class="btn-accent" style="flex:1; padding:12px; font-size:14px;" id="submit-btn">
+            Update Akun
+          </button>
+          <a href="/dashboard/seller/accounts" class="btn-outline" style="padding:12px 20px; font-size:14px; text-align:center;">
+            Batal
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</DashboardLayout>
+
+<style>
+  .form-group { margin-bottom: 18px; }
+  .form-label { display:block; font-size:13px; font-weight:500; margin-bottom:6px; }
+  .form-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+  }
+  .form-input:focus { border-color: var(--accent); }
+</style>
+
+<script>
+  import { supabase } from '../../../../../lib/supabase';
+
+  const form = document.getElementById('edit-form') as HTMLFormElement;
+  const errorMsg = document.getElementById('error-msg')!;
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+  const accountId = (document.getElementById('account-id') as HTMLInputElement).value;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorMsg.style.display = 'none';
+    submitBtn.textContent = 'Menyimpan...';
+    submitBtn.disabled = true;
+
+    const { error } = await supabase.from('accounts').update({
+      title: (document.getElementById('title') as HTMLInputElement).value.trim(),
+      category: (document.getElementById('category') as HTMLInputElement).value.trim(),
+      price: Number((document.getElementById('price') as HTMLInputElement).value),
+      email_account: (document.getElementById('email_account') as HTMLInputElement).value.trim(),
+      password_account: (document.getElementById('password_account') as HTMLInputElement).value,
+      thumbnail_url: (document.getElementById('thumbnail_url') as HTMLInputElement).value.trim() || null,
+    }).eq('id', accountId);
+
+    if (error) {
+      errorMsg.textContent = error.message;
+      errorMsg.style.display = 'block';
+      submitBtn.textContent = 'Update Akun';
+      submitBtn.disabled = false;
+      return;
+    }
+
+    window.location.href = '/dashboard/seller/accounts';
+  });
+</script>

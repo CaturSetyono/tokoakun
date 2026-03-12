@@ -1,0 +1,97 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+---
+
+<PublicLayout title="Login">
+  <section style="min-height: calc(100vh - 64px); display:flex; align-items:center; justify-content:center; padding: 40px 24px; background: var(--bg-secondary);">
+    <div class="card" style="width:100%; max-width:420px; padding:40px;">
+      <div style="text-align:center; margin-bottom:32px;">
+        <h1 style="font-size:26px; font-weight:700; margin:0 0 8px;">Welcome back</h1>
+        <p style="color:var(--text-secondary); font-size:14px; margin:0;">Login ke akun TokoAkun kamu</p>
+      </div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="email" class="form-input" placeholder="email@example.com" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="password" class="form-input" placeholder="••••••••" required />
+        </div>
+
+        <div id="error-msg" style="display:none; color:#ef4444; font-size:13px; margin-bottom:16px; padding:10px 14px; background:rgba(239,68,68,0.08); border-radius:8px;"></div>
+
+        <button type="submit" class="btn-accent" style="width:100%; padding:12px; font-size:15px;" id="submit-btn">
+          Login
+        </button>
+      </form>
+
+      <p style="text-align:center; font-size:13px; color:var(--text-secondary); margin-top:24px;">
+        Belum punya akun? <a href="/register" style="color:var(--accent); font-weight:600; text-decoration:none;">Daftar sekarang</a>
+      </p>
+    </div>
+  </section>
+</PublicLayout>
+
+<style>
+  .form-group { margin-bottom: 18px; }
+  .form-label { display:block; font-size:13px; font-weight:500; margin-bottom:6px; color:var(--text-primary); }
+  .form-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+  }
+  .form-input:focus { border-color: var(--accent); }
+</style>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  const form = document.getElementById('login-form') as HTMLFormElement;
+  const errorMsg = document.getElementById('error-msg')!;
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorMsg.style.display = 'none';
+    submitBtn.textContent = 'Loading...';
+    submitBtn.disabled = true;
+
+    const email = (document.getElementById('email') as HTMLInputElement).value.trim();
+    const password = (document.getElementById('password') as HTMLInputElement).value;
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      errorMsg.textContent = error.message;
+      errorMsg.style.display = 'block';
+      submitBtn.textContent = 'Login';
+      submitBtn.disabled = false;
+      return;
+    }
+
+    // Get role and redirect
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).single();
+      const role = profile?.role ?? 'buyer';
+
+      const params = new URLSearchParams(window.location.search);
+      const redirectTo = params.get('redirectTo');
+      window.location.href = redirectTo ?? (
+        role === 'admin' ? '/dashboard/admin'
+        : role === 'seller' ? '/dashboard/seller'
+        : '/dashboard/buyer'
+      );
+    }
+  });
+</script>

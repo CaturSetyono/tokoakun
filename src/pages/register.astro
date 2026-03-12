@@ -1,0 +1,173 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+---
+
+<PublicLayout title="Register">
+  <section style="min-height: calc(100vh - 64px); display:flex; align-items:center; justify-content:center; padding: 40px 24px; background: var(--bg-secondary);">
+    <div class="card" style="width:100%; max-width:440px; padding:40px;">
+      <div style="text-align:center; margin-bottom:32px;">
+        <h1 style="font-size:26px; font-weight:700; margin:0 0 8px;">Buat Akun</h1>
+        <p style="color:var(--text-secondary); font-size:14px; margin:0;">Bergabung sebagai buyer atau seller</p>
+      </div>
+
+      <form id="register-form">
+        <div class="form-group">
+          <label class="form-label">Nama Lengkap</label>
+          <input type="text" id="name" class="form-input" placeholder="John Doe" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="email" class="form-input" placeholder="email@example.com" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="password" class="form-input" placeholder="Min. 8 karakter" minlength="8" required />
+        </div>
+
+        <!-- Role selector -->
+        <div class="form-group">
+          <label class="form-label">Daftar sebagai</label>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:4px;">
+            <label class="role-option" id="role-buyer">
+              <input type="radio" name="role" value="buyer" checked style="display:none;" />
+              <div class="role-card active" id="card-buyer">
+                <span style="font-size:24px;">🛒</span>
+                <span style="font-weight:600; font-size:14px;">Buyer</span>
+                <span style="font-size:11px; color:var(--text-secondary);">Beli akun digital</span>
+              </div>
+            </label>
+            <label class="role-option" id="role-seller">
+              <input type="radio" name="role" value="seller" style="display:none;" />
+              <div class="role-card" id="card-seller">
+                <span style="font-size:24px;">💼</span>
+                <span style="font-weight:600; font-size:14px;">Seller</span>
+                <span style="font-size:11px; color:var(--text-secondary);">Jual akun digital</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div id="error-msg" style="display:none; color:#ef4444; font-size:13px; margin-bottom:16px; padding:10px 14px; background:rgba(239,68,68,0.08); border-radius:8px;"></div>
+        <div id="success-msg" style="display:none; color:#22c55e; font-size:13px; margin-bottom:16px; padding:10px 14px; background:rgba(34,197,94,0.08); border-radius:8px;"></div>
+
+        <button type="submit" class="btn-accent" style="width:100%; padding:12px; font-size:15px;" id="submit-btn">
+          Daftar Sekarang
+        </button>
+      </form>
+
+      <p style="text-align:center; font-size:13px; color:var(--text-secondary); margin-top:24px;">
+        Sudah punya akun? <a href="/login" style="color:var(--accent); font-weight:600; text-decoration:none;">Login</a>
+      </p>
+    </div>
+  </section>
+</PublicLayout>
+
+<style>
+  .form-group { margin-bottom: 18px; }
+  .form-label { display:block; font-size:13px; font-weight:500; margin-bottom:6px; color:var(--text-primary); }
+  .form-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+  }
+  .form-input:focus { border-color: var(--accent); }
+
+  .role-card {
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .role-card:hover { border-color: var(--accent); }
+  .role-card.active {
+    border-color: var(--accent);
+    background: rgba(166, 255, 0, 0.06);
+  }
+</style>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  // Role card toggle
+  const buyerCard = document.getElementById('card-buyer')!;
+  const sellerCard = document.getElementById('card-seller')!;
+  const buyerInput = document.querySelector<HTMLInputElement>('input[value="buyer"]')!;
+  const sellerInput = document.querySelector<HTMLInputElement>('input[value="seller"]')!;
+
+  document.getElementById('role-buyer')?.addEventListener('click', () => {
+    buyerCard.classList.add('active');
+    sellerCard.classList.remove('active');
+    buyerInput.checked = true;
+  });
+  document.getElementById('role-seller')?.addEventListener('click', () => {
+    sellerCard.classList.add('active');
+    buyerCard.classList.remove('active');
+    sellerInput.checked = true;
+  });
+
+  // Form submit
+  const form = document.getElementById('register-form') as HTMLFormElement;
+  const errorMsg = document.getElementById('error-msg')!;
+  const successMsg = document.getElementById('success-msg')!;
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorMsg.style.display = 'none';
+    successMsg.style.display = 'none';
+    submitBtn.textContent = 'Loading...';
+    submitBtn.disabled = true;
+
+    const name = (document.getElementById('name') as HTMLInputElement).value.trim();
+    const email = (document.getElementById('email') as HTMLInputElement).value.trim();
+    const password = (document.getElementById('password') as HTMLInputElement).value;
+    const role = (document.querySelector<HTMLInputElement>('input[name="role"]:checked')?.value ?? 'buyer') as 'buyer' | 'seller';
+
+    // Register with Supabase Auth
+    const { data, error } = await supabase.auth.signUp({ email, password });
+
+    if (error) {
+      errorMsg.textContent = error.message;
+      errorMsg.style.display = 'block';
+      submitBtn.textContent = 'Daftar Sekarang';
+      submitBtn.disabled = false;
+      return;
+    }
+
+    if (data.user) {
+      // Insert profile row
+      const { error: profileError } = await supabase.from('users').insert({
+        id: data.user.id,
+        name,
+        email,
+        role,
+      });
+
+      if (profileError) {
+        errorMsg.textContent = 'Gagal menyimpan profil: ' + profileError.message;
+        errorMsg.style.display = 'block';
+        submitBtn.textContent = 'Daftar Sekarang';
+        submitBtn.disabled = false;
+        return;
+      }
+    }
+
+    successMsg.textContent = 'Akun berhasil dibuat! Silakan login.';
+    successMsg.style.display = 'block';
+    setTimeout(() => { window.location.href = '/login'; }, 1500);
+  });
+</script>

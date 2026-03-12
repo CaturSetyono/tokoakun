@@ -1,0 +1,129 @@
+---
+import DashboardLayout from '../../../../layouts/DashboardLayout.astro';
+---
+
+<DashboardLayout title="Tambah Akun" role="seller" activeMenu="My Accounts">
+  <div style="max-width:600px;">
+    <div style="margin-bottom:28px;">
+      <h1 style="font-size:24px; font-weight:700; margin:0 0 4px;">Tambah Akun Baru</h1>
+      <p style="color:var(--text-secondary); font-size:14px; margin:0;">Isi detail akun yang akan dijual</p>
+    </div>
+
+    <div class="card" style="padding:32px;">
+      <form id="add-account-form">
+        <div class="form-group">
+          <label class="form-label">Judul Akun *</label>
+          <input type="text" id="title" class="form-input" placeholder="Contoh: Netflix Premium 1 Bulan" required />
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div class="form-group">
+            <label class="form-label">Kategori *</label>
+            <input type="text" id="category" class="form-input" placeholder="Streaming / Game / dll" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Harga (IDR) *</label>
+            <input type="number" id="price" class="form-input" placeholder="50000" min="1000" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email Akun *</label>
+          <input type="email" id="email_account" class="form-input" placeholder="akun@example.com" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password Akun *</label>
+          <input type="text" id="password_account" class="form-input" placeholder="Password akun yang dijual" required />
+          <p style="font-size:12px; color:var(--text-secondary); margin-top:4px;">⚠️ Password hanya terlihat oleh pembeli setelah transaksi berhasil.</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Thumbnail URL (opsional)</label>
+          <input type="url" id="thumbnail_url" class="form-input" placeholder="https://..." />
+        </div>
+
+        <div id="error-msg" style="display:none; color:#ef4444; font-size:13px; margin-bottom:16px; padding:10px 14px; background:rgba(239,68,68,0.08); border-radius:8px;"></div>
+        <div id="success-msg" style="display:none; color:#22c55e; font-size:13px; margin-bottom:16px; padding:10px 14px; background:rgba(34,197,94,0.08); border-radius:8px;"></div>
+
+        <div style="display:flex; gap:12px;">
+          <button type="submit" class="btn-accent" style="flex:1; padding:12px; font-size:14px;" id="submit-btn">
+            Simpan Akun
+          </button>
+          <a href="/dashboard/seller/accounts" class="btn-outline" style="padding:12px 20px; font-size:14px; text-align:center;">
+            Batal
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</DashboardLayout>
+
+<style>
+  .form-group { margin-bottom: 18px; }
+  .form-label { display:block; font-size:13px; font-weight:500; margin-bottom:6px; color:var(--text-primary); }
+  .form-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+  }
+  .form-input:focus { border-color: var(--accent); }
+</style>
+
+<script>
+  import { supabase } from '../../../../lib/supabase';
+
+  const form = document.getElementById('add-account-form') as HTMLFormElement;
+  const errorMsg = document.getElementById('error-msg')!;
+  const successMsg = document.getElementById('success-msg')!;
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorMsg.style.display = 'none';
+    successMsg.style.display = 'none';
+    submitBtn.textContent = 'Menyimpan...';
+    submitBtn.disabled = true;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { window.location.href = '/login'; return; }
+
+    const title = (document.getElementById('title') as HTMLInputElement).value.trim();
+    const category = (document.getElementById('category') as HTMLInputElement).value.trim();
+    const price = Number((document.getElementById('price') as HTMLInputElement).value);
+    const email_account = (document.getElementById('email_account') as HTMLInputElement).value.trim();
+    const password_account = (document.getElementById('password_account') as HTMLInputElement).value;
+    const thumbnail_url = (document.getElementById('thumbnail_url') as HTMLInputElement).value.trim() || null;
+
+    const { error } = await supabase.from('accounts').insert({
+      seller_id: user.id,
+      title,
+      category,
+      price,
+      email_account,
+      password_account,
+      status: 'available',
+      thumbnail_url,
+    });
+
+    if (error) {
+      errorMsg.textContent = error.message;
+      errorMsg.style.display = 'block';
+      submitBtn.textContent = 'Simpan Akun';
+      submitBtn.disabled = false;
+      return;
+    }
+
+    successMsg.textContent = 'Akun berhasil ditambahkan!';
+    successMsg.style.display = 'block';
+    setTimeout(() => { window.location.href = '/dashboard/seller/accounts'; }, 1200);
+  });
+</script>

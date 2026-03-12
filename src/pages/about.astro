@@ -1,0 +1,95 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+---
+
+<PublicLayout title="Tentang Kami - TokoAkun">
+  <main>
+    <!-- Hero -->
+    <section class="section bg-gradient-to-b from-accent/10 to-transparent">
+      <div class="container text-center max-w-3xl">
+        <h1 class="text-4xl md:text-5xl font-bold mb-4">
+          Tentang <span class="gradient-text">TokoAkun</span>
+        </h1>
+        <p class="text-lg opacity-70 leading-relaxed">
+          Marketplace digital terpercaya untuk jual beli akun game, streaming, dan berbagai platform digital lainnya di Indonesia.
+        </p>
+      </div>
+    </section>
+
+    <!-- Our Story -->
+    <section class="section">
+      <div class="container max-w-4xl">
+        <div class="grid md:grid-cols-2 gap-12 items-center">
+          <div>
+            <h2 class="text-3xl font-bold mb-4">Cerita Kami</h2>
+            <p class="opacity-70 leading-relaxed mb-4">
+              TokoAkun lahir dari kebutuhan nyata para gamer dan pengguna platform digital yang ingin menjual atau membeli akun dengan aman, mudah, dan terpercaya.
+            </p>
+            <p class="opacity-70 leading-relaxed mb-4">
+              Kami hadir sebagai platform perantara yang menjamin keamanan transaksi untuk kedua belah pihak — pembeli mendapatkan akun yang valid, dan penjual mendapatkan pembayaran yang aman.
+            </p>
+            <p class="opacity-70 leading-relaxed">
+              Dengan sistem escrow berbasis Mayar.id, setiap transaksi di TokoAkun dilindungi secara penuh hingga proses serah terima selesai.
+            </p>
+          </div>
+          <div class="card p-8 text-center">
+            <div class="text-6xl mb-4">🛡️</div>
+            <h3 class="text-xl font-bold mb-2">Transaksi Aman</h3>
+            <p class="opacity-60 text-sm">Data akun hanya diberikan setelah pembayaran dikonfirmasi secara otomatis</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Values -->
+    <section class="section bg-gradient-to-r from-accent/5 to-transparent">
+      <div class="container max-w-5xl">
+        <h2 class="text-3xl font-bold text-center mb-10">Nilai Kami</h2>
+        <div class="grid md:grid-cols-3 gap-6">
+          {[
+            { icon: '🔒', title: 'Keamanan Pertama', desc: 'Enkripsi end-to-end dan verifikasi pembayaran otomatis untuk setiap transaksi.' },
+            { icon: '⚡', title: 'Cepat & Mudah', desc: 'Proses pembelian selesai dalam hitungan menit. Data akun langsung tersedia.' },
+            { icon: '🤝', title: 'Komunitas Terpercaya', desc: 'Sistem review dan rating membantu pembeli menemukan seller terbaik.' },
+          ].map(v => (
+            <div class="card p-6 text-center">
+              <div class="text-4xl mb-3">{v.icon}</div>
+              <h3 class="font-bold text-lg mb-2">{v.title}</h3>
+              <p class="text-sm opacity-60">{v.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="section">
+      <div class="container max-w-4xl">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          {[
+            { number: '1000+', label: 'Akun Tersedia' },
+            { number: '500+', label: 'Seller Aktif' },
+            { number: '5000+', label: 'Transaksi Sukses' },
+            { number: '99%', label: 'Kepuasan Pembeli' },
+          ].map(s => (
+            <div class="card p-6">
+              <p class="text-3xl font-bold gradient-text">{s.number}</p>
+              <p class="text-sm opacity-60 mt-1">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="section text-center">
+      <div class="container max-w-xl">
+        <h2 class="text-3xl font-bold mb-4">Siap Bergabung?</h2>
+        <p class="opacity-70 mb-6">Daftar gratis dan mulai jual beli akun digital dengan aman bersama ribuan pengguna TokoAkun.</p>
+        <div class="flex gap-4 justify-center flex-wrap">
+          <a href="/register" class="btn-accent px-8 py-3 rounded-xl font-semibold">Daftar Sekarang</a>
+          <a href="/shop" class="btn-outline px-8 py-3 rounded-xl font-semibold">Lihat Produk</a>
+        </div>
+      </div>
+    </section>
+  </main>
+</PublicLayout>

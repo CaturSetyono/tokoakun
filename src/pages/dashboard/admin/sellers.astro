@@ -1,0 +1,115 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import { supabase } from '../../../lib/supabase';
+
+// All sellers with stats
+const { data: sellers } = await supabase
+  .from('users')
+  .select(`
+    id, name, email, created_at,
+    accounts(id, status)
+  `)
+  .eq('role', 'seller')
+  .order('created_at', { ascending: false });
+
+// Aggregate revenue per seller from paid orders
+const { data: revenueData } = await supabase
+  .from('order_items')
+  .select(`
+    price,
+    accounts!inner(seller_id),
+    orders!inner(status)
+  `)
+  .eq('orders.status', 'paid');
+
+const revenueMap: Record<string, number> = {};
+for (const item of revenueData ?? []) {
+  const sid = (item as any).accounts?.seller_id;
+  if (sid) revenueMap[sid] = (revenueMap[sid] ?? 0) + item.price;
+}
+
+function formatIDR(n: number) {
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
+}
+
+const sellerStats = (sellers ?? []).map(s => {
+  const accs = (s as any).accounts ?? [];
+  return {
+    ...s,
+    totalAccounts: accs.length,
+    soldAccounts: accs.filter((a: any) => a.status === 'sold').length,
+    availableAccounts: accs.filter((a: any) => a.status === 'available').length,
+    revenue: revenueMap[s.id] ?? 0,
+  };
+}).sort((a, b) => b.revenue - a.revenue);
+---
+
+<DashboardLayout title="Manajemen Seller" role="admin" activeMenu="sellers">
+  <div class="space-y-6">
+    <!-- Header -->
+    <div>
+      <h1 class="text-2xl font-bold">Manajemen Seller</h1>
+      <p class="text-sm opacity-60 mt-1">{sellerStats.length} seller terdaftar</p>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="card p-4">
+        <p class="text-sm opacity-60">Total Seller</p>
+        <p class="text-2xl font-bold">{sellerStats.length}</p>
+      </div>
+      <div class="card p-4">
+        <p class="text-sm opacity-60">Total Akun Dijual</p>
+        <p class="text-2xl font-bold">{sellerStats.reduce((a, s) => a + s.totalAccounts, 0)}</p>
+      </div>
+      <div class="card p-4">
+        <p class="text-sm opacity-60">Total Terjual</p>
+        <p class="text-2xl font-bold">{sellerStats.reduce((a, s) => a + s.soldAccounts, 0)}</p>
+      </div>
+      <div class="card p-4">
+        <p class="text-sm opacity-60">Total Revenue</p>
+        <p class="text-xl font-bold text-accent">{formatIDR(sellerStats.reduce((a, s) => a + s.revenue, 0))}</p>
+      </div>
+    </div>
+
+    <!-- Sellers Table -->
+    <div class="card p-6">
+      <h2 class="font-semibold mb-4">Ranking Seller</h2>
+      {sellerStats.length === 0 ? (
+        <p class="text-sm opacity-60 text-center py-8">Belum ada seller</p>
+      ) : (
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-white/10">
+                <th class="text-left py-2 pr-4 font-medium opacity-70">#</th>
+                <th class="text-left py-2 pr-4 font-medium opacity-70">Seller</th>
+                <th class="text-center py-2 pr-4 font-medium opacity-70">Total Akun</th>
+                <th class="text-center py-2 pr-4 font-medium opacity-70">Terjual</th>
+                <th class="text-center py-2 pr-4 font-medium opacity-70">Tersedia</th>
+                <th class="text-right py-2 font-medium opacity-70">Revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sellerStats.map((seller, i) => (
+                <tr class="border-b border-white/5 hover:bg-white/5 transition">
+                  <td class="py-3 pr-4 font-bold opacity-40">
+                    {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
+                  </td>
+                  <td class="py-3 pr-4">
+                    <p class="font-medium">{seller.name}</p>
+                    <p class="text-xs opacity-50">{seller.email}</p>
+                  </td>
+                  <td class="py-3 pr-4 text-center">{seller.totalAccounts}</td>
+                  <td class="py-3 pr-4 text-center text-green-400">{seller.soldAccounts}</td>
+                  <td class="py-3 pr-4 text-center text-blue-400">{seller.availableAccounts}</td>
+                  <td class="py-3 text-right font-semibold text-accent">{formatIDR(seller.revenue)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  </div>
+</DashboardLayout>

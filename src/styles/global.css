@@ -1,0 +1,103 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* ── Theme variables ─────────────────────────────── */
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f7f8fa;
+  --text-primary: #111111;
+  --text-secondary: #555555;
+  --card-bg: #ffffff;
+  --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  --border-color: #e5e7eb;
+  --accent: #a6ff00;
+  --accent-gradient: linear-gradient(90deg, #b4ff2b, #8dff00);
+  --nav-bg: rgba(255, 255, 255, 0.85);
+}
+
+html.dark {
+  --bg-primary: #0f0f0f;
+  --bg-secondary: #1a1a1a;
+  --text-primary: #f1f1f1;
+  --text-secondary: #a0a0a0;
+  --card-bg: #1e1e1e;
+  --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  --border-color: #2e2e2e;
+  --nav-bg: rgba(15, 15, 15, 0.85);
+}
+
+/* ── Base ────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* ── Utility helpers ─────────────────────────────── */
+.card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--border-color);
+}
+
+.btn-accent {
+  background: var(--accent-gradient);
+  color: #111111;
+  font-weight: 500;
+  font-size: 14px;
+  border-radius: 12px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  border: none;
+  display: inline-block;
+  text-decoration: none;
+}
+.btn-accent:hover {
+  opacity: 0.85;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 14px;
+  border-radius: 12px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid var(--border-color);
+  display: inline-block;
+  text-decoration: none;
+}
+.btn-outline:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.gradient-text {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.section {
+  padding: 80px 0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}

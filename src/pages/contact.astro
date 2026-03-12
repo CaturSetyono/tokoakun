@@ -1,0 +1,162 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+
+const faqs = [
+  { q: 'Berapa lama akun dikirim setelah pembayaran?', a: 'Langsung otomatis! Setelah pembayaran terverifikasi, data akun langsung tersedia di dashboard kamu.' },
+  { q: 'Apakah ada jaminan jika akun bermasalah?', a: 'Kami menyediakan garansi 24 jam sejak pembelian. Jika ada masalah, hubungi kami segera.' },
+  { q: 'Bagaimana cara menjadi seller?', a: 'Daftar akun dengan memilih role Seller, lalu mulai tambahkan akun yang ingin dijual dari dashboard.' },
+  { q: 'Metode pembayaran apa yang tersedia?', a: 'Kami mendukung transfer bank, e-wallet (GoPay, OVO, Dana), dan QRIS melalui Mayar.id.' },
+];
+---
+
+<PublicLayout title="Kontak - TokoAkun">
+  <main>
+    <!-- Hero -->
+    <section class="section bg-gradient-to-b from-accent/10 to-transparent">
+      <div class="container text-center max-w-2xl">
+        <h1 class="text-4xl md:text-5xl font-bold mb-4">
+          Hubungi <span class="gradient-text">Kami</span>
+        </h1>
+        <p class="opacity-70 text-lg">Ada pertanyaan atau butuh bantuan? Tim kami siap membantu kamu.</p>
+      </div>
+    </section>
+
+    <!-- Contact Cards -->
+    <section class="section">
+      <div class="container max-w-4xl">
+        <div class="grid md:grid-cols-3 gap-6 mb-12">
+          {[
+            {
+              icon: '📧',
+              title: 'Email',
+              value: 'support@tokoakun.id',
+              desc: 'Balasan dalam 1x24 jam',
+              href: 'mailto:support@tokoakun.id',
+            },
+            {
+              icon: '💬',
+              title: 'WhatsApp',
+              value: '+62 812-3456-7890',
+              desc: 'Senin–Sabtu, 08.00–20.00 WIB',
+              href: 'https://wa.me/6281234567890',
+            },
+            {
+              icon: '📱',
+              title: 'Telegram',
+              value: '@tokoakun_id',
+              desc: 'Chat langsung dengan admin',
+              href: 'https://t.me/tokoakun_id',
+            },
+          ].map(c => (
+            <a href={c.href} target="_blank" rel="noopener noreferrer" class="card p-6 text-center hover:border-accent/40 transition group">
+              <div class="text-4xl mb-3">{c.icon}</div>
+              <h3 class="font-bold text-lg mb-1">{c.title}</h3>
+              <p class="font-semibold text-accent group-hover:underline">{c.value}</p>
+              <p class="text-sm opacity-50 mt-1">{c.desc}</p>
+            </a>
+          ))}
+        </div>
+
+        <!-- Contact Form -->
+        <div class="card p-8 max-w-2xl mx-auto">
+          <h2 class="text-2xl font-bold mb-6 text-center">Kirim Pesan</h2>
+          <form
+            id="contact-form"
+            class="space-y-4"
+          >
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium mb-1" for="name">Nama</label>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  required
+                  placeholder="Nama kamu"
+                  class="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 focus:border-accent focus:outline-none text-sm"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1" for="email">Email</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="email@kamu.com"
+                  class="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 focus:border-accent focus:outline-none text-sm"
+                />
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1" for="subject">Subjek</label>
+              <input
+                id="subject"
+                name="subject"
+                type="text"
+                required
+                placeholder="Topik pertanyaan kamu"
+                class="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 focus:border-accent focus:outline-none text-sm"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1" for="message">Pesan</label>
+              <textarea
+                id="message"
+                name="message"
+                required
+                rows={5}
+                placeholder="Tulis pesanmu di sini..."
+                class="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 focus:border-accent focus:outline-none text-sm resize-none"
+              ></textarea>
+            </div>
+            <div id="form-status" class="hidden text-sm text-center py-2 rounded-lg"></div>
+            <button type="submit" class="btn-accent w-full py-3 rounded-xl font-semibold">
+              Kirim Pesan
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section bg-gradient-to-r from-accent/5 to-transparent">
+      <div class="container max-w-3xl">
+        <h2 class="text-3xl font-bold text-center mb-8">Pertanyaan Umum</h2>
+        <div class="space-y-4">
+          {faqs.map(faq => (
+            <details class="card p-0 group">
+              <summary class="px-6 py-4 cursor-pointer font-semibold flex justify-between items-center list-none">
+                {faq.q}
+                <span class="ml-4 opacity-50 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <p class="px-6 pb-4 text-sm opacity-70 leading-relaxed">{faq.a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById('contact-form') as HTMLFormElement;
+    const status = document.getElementById('form-status') as HTMLDivElement;
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+      btn.disabled = true;
+      btn.textContent = 'Mengirim...';
+
+      // Simulate send — replace with actual API call if backend is added
+      await new Promise(r => setTimeout(r, 1000));
+
+      status.className = 'text-sm text-center py-2 rounded-lg bg-green-500/20 text-green-400';
+      status.textContent = 'Pesan berhasil dikirim! Kami akan menghubungi kamu segera.';
+      status.classList.remove('hidden');
+      form.reset();
+      btn.disabled = false;
+      btn.textContent = 'Kirim Pesan';
+    });
+  </script>
+</PublicLayout>

@@ -1,0 +1,37 @@
+---
+interface Props {
+  sellerId: string;
+  sellerName: string;
+  totalSold: number;
+  rank: number;
+  avatarUrl?: string;
+}
+
+const { sellerName, totalSold, rank, avatarUrl } = Astro.props;
+const medalMap: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
+---
+
+<div class="seller-card card" style="padding:20px; display:flex; align-items:center; gap:16px;">
+  <!-- Avatar -->
+  <div style="width:52px; height:52px; border-radius:50%; overflow:hidden; background:var(--bg-secondary); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:22px;">
+    {avatarUrl
+      ? <img src={avatarUrl} alt={sellerName} style="width:100%; height:100%; object-fit:cover;" />
+      : '👤'
+    }
+  </div>
+
+  <!-- Info -->
+  <div style="flex:1; min-width:0;">
+    <p style="font-size:14px; font-weight:600; margin:0 0 2px; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+      {sellerName}
+    </p>
+    <p style="font-size:12px; color:var(--text-secondary); margin:0;">
+      {totalSold} akun terjual
+    </p>
+  </div>
+
+  <!-- Rank badge -->
+  <div style="font-size:22px; flex-shrink:0;">
+    {medalMap[rank] ?? `#${rank}`}
+  </div>
+</div>
