@@ -28,7 +28,6 @@ const menus: Record<string, { label: string; href: string; icon: any }[]> = {
     { label: 'User Management', href: '/dashboard/admin/users', icon: Users },
     { label: 'Seller Analytics', href: '/dashboard/admin/sellers', icon: LineChart },
     { label: 'Orders', href: '/dashboard/admin/orders', icon: Package },
-    { label: 'Platform Stats', href: '/dashboard/admin/stats', icon: Hash },
   ],
 };
 
@@ -107,9 +106,9 @@ const items = menus[role];
 </style>
 
 <script>
-  import { supabase } from '../lib/supabase-browser';
   document.getElementById('sidebar-logout')?.addEventListener('click', async () => {
-    await supabase.auth.signOut();
+    await fetch('/api/auth/logout', { method: 'POST' });
     window.location.href = '/login';
   });
+
 </script>

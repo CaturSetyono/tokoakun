@@ -101,8 +101,6 @@ import { ShoppingCart, Briefcase } from 'lucide-astro';
 </style>
 
 <script>
-  import { supabase } from '../lib/supabase-browser';
-
   // Role card toggle
   const buyerCard = document.getElementById('card-buyer')!;
   const sellerCard = document.getElementById('card-seller')!;
@@ -138,24 +136,28 @@ import { ShoppingCart, Briefcase } from 'lucide-astro';
     const password = (document.getElementById('password') as HTMLInputElement).value;
     const role = (document.querySelector<HTMLInputElement>('input[name="role"]:checked')?.value ?? 'buyer') as 'buyer' | 'seller';
 
-    // Register with Supabase Auth — pass name & role as metadata
-    // A SECURITY DEFINER trigger on auth.users will auto-create the profile row
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { name, role } },
-    });
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, role })
+      });
 
-    if (error) {
-      errorMsg.textContent = error.message;
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Terjadi kesalahan saat pendaftaran');
+      }
+
+      successMsg.textContent = 'Akun berhasil dibuat! Silakan login.';
+      successMsg.style.display = 'block';
+      setTimeout(() => { window.location.href = '/login'; }, 1500);
+    } catch (err: any) {
+      errorMsg.textContent = err.message;
       errorMsg.style.display = 'block';
       submitBtn.textContent = 'Daftar Sekarang';
       submitBtn.disabled = false;
-      return;
     }
-
-    successMsg.textContent = 'Akun berhasil dibuat! Silakan login.';
-    successMsg.style.display = 'block';
-    setTimeout(() => { window.location.href = '/login'; }, 1500);
   });
+
 </script>

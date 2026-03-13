@@ -1,10 +1,6 @@
 import { defineMiddleware } from "astro:middleware";
-import {
-  createServerClient,
-  parseCookieHeader,
-  serializeCookieHeader,
-} from "@supabase/ssr";
-import type { Database } from "./lib/database.types";
+import { verifySession } from "./lib/auth";
+import { supabaseAdmin } from "./lib/supabaseAdmin";
 
 // Routes that require authentication (prefix match)
 const PROTECTED_PREFIXES = ["/dashboard"];
@@ -13,7 +9,7 @@ const PROTECTED_PREFIXES = ["/dashboard"];
 const AUTH_ONLY_ROUTES = ["/login", "/register"];
 
 export const onRequest = defineMiddleware(async (context, next) => {
-  const { url, redirect } = context;
+  const { url, redirect, cookies } = context;
   const pathname = url.pathname;
 
   const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
@@ -23,30 +19,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return next();
   }
 
-  // Build a server-side Supabase client reading session from request cookies
-  const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL!;
-  const supabaseKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY!;
-
-  const supabase = createServerClient<Database>(supabaseUrl, supabaseKey, {
-    cookies: {
-      getAll() {
-        return parseCookieHeader(context.request.headers.get("Cookie") ?? "");
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) => {
-          context.cookies.set(
-            name,
-            value,
-            options as Parameters<typeof context.cookies.set>[2],
-          );
-        });
-      },
-    },
-  });
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Get session from cookie
+  const sessionToken = cookies.get("session")?.value;
+  const user = sessionToken ? await verifySession(sessionToken) : null;
 
   // Not logged in → redirect to login
   if (isProtected && !user) {
@@ -55,13 +30,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // Already logged in → redirect away from login/register
   if (isAuthOnly && user) {
-    const { data: profile } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    const role = profile?.role ?? "buyer";
+    const role = user.role ?? "buyer";
     return redirect(
       role === "admin"
         ? "/dashboard/admin"
@@ -73,17 +42,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // Role-based dashboard guard: /dashboard/seller only for sellers, etc.
   if (isProtected && user) {
-    const { data: profile } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    const role = profile?.role ?? "buyer";
+    const role = user.role ?? "buyer";
 
     // Expose user info to pages via locals
     context.locals.userId = user.id;
     context.locals.userRole = role;
+    context.locals.userEmail = user.email;
+    context.locals.userName = user.name;
 
     if (pathname.startsWith("/dashboard/admin") && role !== "admin") {
       return redirect("/dashboard/" + role);

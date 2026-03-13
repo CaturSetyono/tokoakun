@@ -1,10 +1,10 @@
 ---
 import DashboardLayout from '../../../../../layouts/DashboardLayout.astro';
-import { supabase } from '../../../../../lib/supabase';
+import { supabaseAdmin } from '../../../../../lib/supabaseAdmin';
 
 const { id } = Astro.params;
 
-const { data: account } = await supabase
+const { data: account } = await supabaseAdmin
   .from('accounts')
   .select('*')
   .eq('id', id!)
@@ -91,8 +91,6 @@ if (!account || account.status !== 'available') {
 </style>
 
 <script>
-  import { supabase } from '../../../../../lib/supabase';
-
   const form = document.getElementById('edit-form') as HTMLFormElement;
   const errorMsg = document.getElementById('error-msg')!;
   const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
@@ -104,23 +102,29 @@ if (!account || account.status !== 'available') {
     submitBtn.textContent = 'Menyimpan...';
     submitBtn.disabled = true;
 
-    const { error } = await supabase.from('accounts').update({
-      title: (document.getElementById('title') as HTMLInputElement).value.trim(),
-      category: (document.getElementById('category') as HTMLInputElement).value.trim(),
-      price: Number((document.getElementById('price') as HTMLInputElement).value),
-      email_account: (document.getElementById('email_account') as HTMLInputElement).value.trim(),
-      password_account: (document.getElementById('password_account') as HTMLInputElement).value,
-      thumbnail_url: (document.getElementById('thumbnail_url') as HTMLInputElement).value.trim() || null,
-    }).eq('id', accountId);
+    try {
+      const res = await fetch(`/api/seller/accounts/${accountId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: (document.getElementById('title') as HTMLInputElement).value.trim(),
+          category: (document.getElementById('category') as HTMLInputElement).value.trim(),
+          price: Number((document.getElementById('price') as HTMLInputElement).value),
+          email_account: (document.getElementById('email_account') as HTMLInputElement).value.trim(),
+          password_account: (document.getElementById('password_account') as HTMLInputElement).value,
+          thumbnail_url: (document.getElementById('thumbnail_url') as HTMLInputElement).value.trim() || null,
+        })
+      });
 
-    if (error) {
-      errorMsg.textContent = error.message;
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Gagal mengupdate akun');
+
+      window.location.href = '/dashboard/seller/accounts';
+    } catch (err: any) {
+      errorMsg.textContent = err.message;
       errorMsg.style.display = 'block';
       submitBtn.textContent = 'Update Akun';
       submitBtn.disabled = false;
-      return;
     }
-
-    window.location.href = '/dashboard/seller/accounts';
   });
 </script>

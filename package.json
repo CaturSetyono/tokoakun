@@ -18,11 +18,15 @@
     "@supabase/supabase-js": "^2.99.1",
     "@tailwindcss/vite": "^4.2.1",
     "astro": "^6.0.4",
+    "bcryptjs": "^3.0.3",
+    "jose": "^6.2.1",
     "lucide-astro": "^0.556.0",
+    "postgres": "^3.4.8",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "dotenv": "^17.3.1"
   }
 }

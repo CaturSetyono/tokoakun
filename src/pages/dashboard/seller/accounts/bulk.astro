@@ -1,0 +1,198 @@
+---
+import DashboardLayout from '../../../../layouts/DashboardLayout.astro';
+import { AlertTriangle, ListFilter } from 'lucide-astro';
+---
+
+<DashboardLayout title="Bulk Tambah Akun" role="seller" activeMenu="My Accounts">
+  <div style="max-width:800px;">
+    <div style="margin-bottom:28px;">
+      <h1 style="font-size:24px; font-weight:700; margin:0 0 4px;">Bulk Tambah Akun</h1>
+      <p style="color:var(--text-secondary); font-size:14px; margin:0;">Tambahkan banyak akun sekaligus dengan format email:password</p>
+    </div>
+
+    <div class="card" style="padding:32px;">
+      <form id="bulk-account-form">
+        <div class="form-group">
+          <label class="form-label">Judul Akun (Umum) *</label>
+          <input type="text" id="title" class="form-input" placeholder="Contoh: Akun Netflix Premium" required />
+          <p style="font-size:12px; color:var(--text-secondary); margin-top:4px;">Ini akan menjadi judul untuk semua akun yang ditambahkan.</p>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div class="form-group">
+            <label class="form-label">Kategori *</label>
+            <input type="text" id="category" class="form-input" placeholder="Streaming" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Harga Satuan (IDR) *</label>
+            <input type="number" id="price" class="form-input" placeholder="50000" min="1000" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="display:flex; justify-content:space-between;">
+            Daftar Akun (email:password) *
+            <span id="account-count" style="font-weight:400; color:var(--accent);">0 akun terdeteksi</span>
+          </label>
+          <textarea 
+            id="account_list" 
+            class="form-input" 
+            rows="8" 
+            placeholder="email1@example.com:password123&#10;email2@example.com:securepass&#10;email3@example.com:pass321" 
+            style="font-family:monospace; resize:vertical; margin-bottom:12px;"
+            required
+          ></textarea>
+          
+          <div id="preview-section" style="display:none; margin-bottom:16px;">
+            <p style="font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">Pratinjau Data (5 pertama)</p>
+            <div style="border:1px solid var(--border-color); border-radius:8px; overflow:hidden; background:var(--bg-primary);">
+              <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                <thead style="background:var(--bg-secondary); border-bottom:1px solid var(--border-color);">
+                  <tr>
+                    <th style="padding:8px 12px; text-align:left; color:var(--text-secondary);">Email Akun</th>
+                    <th style="padding:8px 12px; text-align:left; color:var(--text-secondary);">Password</th>
+                  </tr>
+                </thead>
+                <tbody id="preview-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div style="padding:12px; background:rgba(166,255,0,0.05); border-radius:8px; border:1px dashed var(--border-color);">
+            <p style="font-size:12px; color:var(--text-secondary); margin:0; display:flex; align-items:center; gap:6px;">
+              <ListFilter size={14} /> Masukkan satu akun per baris dengan format <strong>email:password</strong>
+            </p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Thumbnail URL (opsional)</label>
+          <input type="url" id="thumbnail_url" class="form-input" placeholder="https://..." />
+        </div>
+
+        <div id="error-msg" style="display:none; color:#ef4444; font-size:13px; margin-bottom:16px; padding:10px 14px; background:rgba(239,68,68,0.08); border-radius:8px;"></div>
+        <div id="success-msg" style="display:none; color:#22c55e; font-size:13px; margin-bottom:16px; padding:10px 14px; background:rgba(34,197,94,0.08); border-radius:8px;"></div>
+
+        <div style="display:flex; gap:12px;">
+          <button type="submit" class="btn-accent" style="flex:1; padding:12px; font-size:14px;" id="submit-btn" disabled>
+            Simpan <span id="btn-count">0</span> Akun
+          </button>
+          <a href="/dashboard/seller/accounts" class="btn-outline" style="padding:12px 20px; font-size:14px; text-align:center;">
+            Batal
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</DashboardLayout>
+
+<style>
+  .form-group { margin-bottom: 18px; }
+  .form-label { display:block; font-size:13px; font-weight:500; margin-bottom:6px; color:var(--text-primary); }
+  .form-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+  }
+  .form-input:focus { border-color: var(--accent); }
+</style>
+
+<script>
+  const form = document.getElementById('bulk-account-form') as HTMLFormElement;
+  const textarea = document.getElementById('account_list') as HTMLTextAreaElement;
+  const countDisplay = document.getElementById('account-count')!;
+  const btnCount = document.getElementById('btn-count')!;
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+  const errorMsg = document.getElementById('error-msg')!;
+  const successMsg = document.getElementById('success-msg')!;
+
+  const previewSection = document.getElementById('preview-section')!;
+  const previewBody = document.getElementById('preview-body')!;
+
+  function updateCounts() {
+    const lines = textarea.value.split('\n').filter(line => line.trim().includes(':'));
+    const count = lines.length;
+    countDisplay.textContent = `${count} akun terdeteksi`;
+    btnCount.textContent = count.toString();
+    submitBtn.disabled = count === 0;
+
+    // Update preview
+    if (count > 0) {
+      previewSection.style.display = 'block';
+      const previewLines = lines.slice(0, 5);
+      previewBody.innerHTML = previewLines.map(line => {
+        const [email, ...passParts] = line.split(':');
+        return `
+          <tr style="border-bottom:1px solid var(--border-color);">
+            <td style="padding:8px 12px; font-family:monospace;">${email.trim()}</td>
+            <td style="padding:8px 12px; font-family:monospace;">${passParts.join(':').trim()}</td>
+          </tr>
+        `;
+      }).join('');
+      if (count > 5) {
+        previewBody.innerHTML += `<tr><td colspan="2" style="padding:8px 12px; text-align:center; color:var(--text-secondary); font-style:italic;">...dan ${count - 5} akun lainnya</td></tr>`;
+      }
+    } else {
+      previewSection.style.display = 'none';
+    }
+  }
+
+  textarea.addEventListener('input', updateCounts);
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorMsg.style.display = 'none';
+    successMsg.style.display = 'none';
+    submitBtn.textContent = 'Memproses...';
+    submitBtn.disabled = true;
+
+    const title = (document.getElementById('title') as HTMLInputElement).value.trim();
+    const category = (document.getElementById('category') as HTMLInputElement).value.trim();
+    const price = Number((document.getElementById('price') as HTMLInputElement).value);
+    const thumbnail_url = (document.getElementById('thumbnail_url') as HTMLInputElement).value.trim() || null;
+    
+    const lines = textarea.value.split('\n')
+      .map(line => line.trim())
+      .filter(line => line.includes(':'));
+
+    const accountsToInsert = lines.map(line => {
+      const [email, ...passParts] = line.split(':');
+      return {
+        title,
+        category,
+        price,
+        email_account: email.trim(),
+        password_account: passParts.join(':').trim(),
+        thumbnail_url
+      };
+    });
+
+    try {
+      const res = await fetch('/api/seller/accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(accountsToInsert)
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Gagal menyimpan akun-akun');
+
+      successMsg.textContent = `${accountsToInsert.length} akun berhasil ditambahkan!`;
+      successMsg.style.display = 'block';
+      setTimeout(() => { window.location.href = '/dashboard/seller/accounts'; }, 1500);
+    } catch (err: any) {
+      errorMsg.textContent = err.message;
+      errorMsg.style.display = 'block';
+      submitBtn.textContent = `Simpan ${accountsToInsert.length} Akun`;
+      submitBtn.disabled = false;
+    }
+  });
+</script>

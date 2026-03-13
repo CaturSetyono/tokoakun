@@ -1,5 +1,6 @@
 ---
 // Navbar component
+const { userId, userRole } = Astro.locals;
 ---
 
 <nav id="navbar">
@@ -24,7 +25,18 @@
       </button>
 
       <div id="auth-buttons">
-        <a href="/login" class="btn-outline" style="padding:8px 16px; font-size:13px;">Login</a>
+        {userId ? (
+          <>
+            <a href={
+              userRole === 'admin' ? '/dashboard/admin' : 
+              userRole === 'seller' ? '/dashboard/seller' : 
+              '/dashboard/buyer'
+            } class="btn-outline" style="padding:8px 16px; font-size:13px; margin-right:8px;">Dashboard</a>
+            <button id="logout-btn" class="btn-accent" style="padding:8px 16px; font-size:13px;">Logout</button>
+          </>
+        ) : (
+          <a href="/login" class="btn-outline" style="padding:8px 16px; font-size:13px;">Login</a>
+        )}
       </div>
     </div>
   </div>
@@ -79,33 +91,11 @@
     }
   });
 
-  // Auth state: show dashboard link if logged in
-  import { supabase } from '../lib/supabase-browser';
-
-  const { data: { user } } = await supabase.auth.getUser();
-  const authDiv = document.getElementById('auth-buttons')!;
-
-  if (user) {
-    const { data: profile } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    const role = profile?.role ?? 'buyer';
-    const dashPath = role === 'admin'
-      ? '/dashboard/admin'
-      : role === 'seller'
-        ? '/dashboard/seller'
-        : '/dashboard/buyer';
-
-    authDiv.innerHTML = `
-      <a href="${dashPath}" class="btn-outline" style="padding:8px 16px; font-size:13px; margin-right:8px;">Dashboard</a>
-      <button id="logout-btn" class="btn-accent" style="padding:8px 16px; font-size:13px;">Logout</button>
-    `;
-    document.getElementById('logout-btn')?.addEventListener('click', async () => {
-      await supabase.auth.signOut();
+  // Handle Logout
+  document.getElementById('logout-btn')?.addEventListener('click', async () => {
+    const response = await fetch('/api/auth/logout', { method: 'POST' });
+    if (response.ok) {
       window.location.href = '/';
-    });
-  }
+    }
+  });
 </script>

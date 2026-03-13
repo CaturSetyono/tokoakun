@@ -54,8 +54,6 @@ import PublicLayout from '../layouts/PublicLayout.astro';
 </style>
 
 <script>
-  import { supabase } from '../lib/supabase-browser';
-
   const form = document.getElementById('login-form') as HTMLFormElement;
   const errorMsg = document.getElementById('error-msg')!;
   const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
@@ -69,29 +67,37 @@ import PublicLayout from '../layouts/PublicLayout.astro';
     const email = (document.getElementById('email') as HTMLInputElement).value.trim();
     const password = (document.getElementById('password') as HTMLInputElement).value;
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
 
-    if (error) {
-      errorMsg.textContent = error.message;
-      errorMsg.style.display = 'block';
-      submitBtn.textContent = 'Login';
-      submitBtn.disabled = false;
-      return;
-    }
+      const result = await response.json();
 
-    // Get role and redirect
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).single();
-      const role = profile?.role ?? 'buyer';
+      if (!response.ok) {
+        throw new Error(result.error || 'Login gagal. Periksa kembali email dan password Anda.');
+      }
+
+      // Successful login, result contains user info
+      const { user } = result;
+      const role = user.role;
 
       const params = new URLSearchParams(window.location.search);
       const redirectTo = params.get('redirectTo');
+      
       window.location.href = redirectTo ?? (
         role === 'admin' ? '/dashboard/admin'
         : role === 'seller' ? '/dashboard/seller'
         : '/dashboard/buyer'
       );
+    } catch (err: any) {
+      errorMsg.textContent = err.message;
+      errorMsg.style.display = 'block';
+      submitBtn.textContent = 'Login';
+      submitBtn.disabled = false;
     }
   });
+
 </script>

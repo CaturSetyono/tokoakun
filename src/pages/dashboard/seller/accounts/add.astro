@@ -82,8 +82,6 @@ import { AlertTriangle } from 'lucide-astro';
 </style>
 
 <script>
-  import { supabase } from '../../../../lib/supabase';
-
   const form = document.getElementById('add-account-form') as HTMLFormElement;
   const errorMsg = document.getElementById('error-msg')!;
   const successMsg = document.getElementById('success-msg')!;
@@ -96,9 +94,6 @@ import { AlertTriangle } from 'lucide-astro';
     submitBtn.textContent = 'Menyimpan...';
     submitBtn.disabled = true;
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { window.location.href = '/login'; return; }
-
     const title = (document.getElementById('title') as HTMLInputElement).value.trim();
     const category = (document.getElementById('category') as HTMLInputElement).value.trim();
     const price = Number((document.getElementById('price') as HTMLInputElement).value);
@@ -106,27 +101,26 @@ import { AlertTriangle } from 'lucide-astro';
     const password_account = (document.getElementById('password_account') as HTMLInputElement).value;
     const thumbnail_url = (document.getElementById('thumbnail_url') as HTMLInputElement).value.trim() || null;
 
-    const { error } = await supabase.from('accounts').insert({
-      seller_id: user.id,
-      title,
-      category,
-      price,
-      email_account,
-      password_account,
-      status: 'available',
-      thumbnail_url,
-    });
+    try {
+      const res = await fetch('/api/seller/accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title, category, price, email_account, password_account, thumbnail_url
+        })
+      });
 
-    if (error) {
-      errorMsg.textContent = error.message;
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Gagal menyimpan akun');
+
+      successMsg.textContent = 'Akun berhasil ditambahkan!';
+      successMsg.style.display = 'block';
+      setTimeout(() => { window.location.href = '/dashboard/seller/accounts'; }, 1200);
+    } catch (err: any) {
+      errorMsg.textContent = err.message;
       errorMsg.style.display = 'block';
       submitBtn.textContent = 'Simpan Akun';
       submitBtn.disabled = false;
-      return;
     }
-
-    successMsg.textContent = 'Akun berhasil ditambahkan!';
-    successMsg.style.display = 'block';
-    setTimeout(() => { window.location.href = '/dashboard/seller/accounts'; }, 1200);
   });
 </script>

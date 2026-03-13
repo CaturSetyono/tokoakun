@@ -1,14 +1,14 @@
 ---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
-import { supabase } from '../../../lib/supabase';
+import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 import { Inbox } from 'lucide-astro';
 
-const { data: { user } } = await supabase.auth.getUser();
+const { userId } = Astro.locals;
 
-const { data: soldAccounts } = await supabase
+const { data: soldAccounts } = await supabaseAdmin
   .from('accounts')
   .select('id, title, category, price, sold_at, buyer_id, users!buyer_id(name, email)')
-  .eq('seller_id', user?.id ?? '')
+  .eq('seller_id', userId || '')
   .eq('status', 'sold')
   .order('sold_at', { ascending: false });
 ---

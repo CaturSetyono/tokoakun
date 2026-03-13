@@ -1,26 +1,29 @@
 ---
 import DashboardLayout from '../../../../layouts/DashboardLayout.astro';
-import { supabase } from '../../../../lib/supabase';
+import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 import { PackageOpen } from 'lucide-astro';
 
-// Get current user's seller accounts
-const { data: { user } } = await supabase.auth.getUser();
+// Get current user's seller accounts from locals
+const { userId } = Astro.locals;
 
-const { data: accounts } = await supabase
+const { data: accounts } = await supabaseAdmin
   .from('accounts')
   .select('id, title, category, price, status, created_at')
-  .eq('seller_id', user?.id ?? '')
+  .eq('seller_id', userId || '')
   .order('created_at', { ascending: false });
 ---
 
 <DashboardLayout title="My Accounts" role="seller" activeMenu="My Accounts">
   <div>
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:28px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:28px;">
       <div>
         <h1 style="font-size:24px; font-weight:700; margin:0 0 4px;">My Accounts</h1>
         <p style="color:var(--text-secondary); font-size:14px; margin:0;">{accounts?.length ?? 0} akun</p>
       </div>
-      <a href="/dashboard/seller/accounts/add" class="btn-accent">+ Tambah Akun</a>
+      <div style="display:flex; gap:12px;">
+        <a href="/dashboard/seller/accounts/bulk" class="btn-outline" style="border-color:var(--accent); color:var(--accent); display:flex; align-items:center; padding:10px 16px; border-radius:10px; font-size:14px; text-decoration:none; font-weight:500;">Bulk Tambah</a>
+        <a href="/dashboard/seller/accounts/add" class="btn-accent" style="display:flex; align-items:center; padding:10px 20px; border-radius:10px; font-size:14px; text-decoration:none; font-weight:600;">+ Tambah Akun</a>
+      </div>
     </div>
 
     <div class="card" style="overflow:hidden;">
@@ -85,15 +88,25 @@ const { data: accounts } = await supabase
 </style>
 
 <script>
-  import { supabase } from '../../../../lib/supabase';
-
   document.querySelectorAll<HTMLButtonElement>('.delete-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (!confirm('Hapus akun ini?')) return;
       const id = btn.dataset.id!;
-      const { error } = await supabase.from('accounts').delete().eq('id', id);
-      if (error) alert('Gagal menghapus: ' + error.message);
-      else window.location.reload();
+      
+      try {
+        const res = await fetch(`/api/seller/accounts/${id}`, {
+          method: 'DELETE'
+        });
+        
+        if (!res.ok) {
+           const result = await res.json();
+           throw new Error(result.error || 'Gagal menghapus');
+        }
+        
+        window.location.reload();
+      } catch (err: any) {
+        alert(err.message);
+      }
     });
   });
 </script>

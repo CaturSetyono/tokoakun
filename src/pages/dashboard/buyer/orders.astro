@@ -1,12 +1,12 @@
 ---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
-import { supabase } from '../../../lib/supabase';
+import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 import { CheckCircle, Clock, PartyPopper, CreditCard, ShoppingBag } from 'lucide-astro';
 
-const { data: { user } } = await supabase.auth.getUser();
+const { userId } = Astro.locals;
 
 // Orders for buyer
-const { data: orders } = await supabase
+const { data: orders } = await supabaseAdmin
   .from('orders')
   .select(`
     id, total_price, status, created_at, mayar_payment_url,
@@ -15,7 +15,7 @@ const { data: orders } = await supabase
       accounts(id, title, category, email_account, password_account, status)
     )
   `)
-  .eq('buyer_id', user?.id ?? '')
+  .eq('buyer_id', userId || '')
   .order('created_at', { ascending: false });
 ---
 

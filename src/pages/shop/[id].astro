@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { Gamepad2, CheckCircle, Lock, Mail, ShoppingCart } from 'lucide-astro';
 
 const { id } = Astro.params;
+const { userId } = Astro.locals;
 
 const { data: account } = await supabase
   .from('accounts')
@@ -78,6 +79,7 @@ const isAvailable = account.status === 'available';
             <button
               id="buy-btn"
               data-account-id={account.id}
+              data-logged-in={userId ? 'true' : 'false'}
               class="btn-accent"
               style="width:100%; padding:14px; font-size:15px; display:flex; align-items:center; justify-content:center; gap:8px;"
             >
@@ -97,74 +99,50 @@ const isAvailable = account.status === 'available';
 </PublicLayout>
 
 <script>
-  import { supabase } from '../../lib/supabase-browser';
-
   const buyBtn = document.getElementById('buy-btn') as HTMLButtonElement | null;
   const buyIcon = document.getElementById('buy-icon');
   const buyText = document.getElementById('buy-text');
   const errorDiv = document.getElementById('buy-error')!;
 
   buyBtn?.addEventListener('click', async () => {
+    const isLoggedIn = buyBtn.dataset.loggedIn === 'true';
+    if (!isLoggedIn) {
+      window.location.href = `/login?redirectTo=${encodeURIComponent(window.location.pathname)}`;
+      return;
+    }
+
     errorDiv.style.display = 'none';
     if (buyText) buyText.textContent = 'Loading...';
     if (buyIcon) buyIcon.style.display = 'none';
     buyBtn.disabled = true;
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      window.location.href = `/login?redirectTo=${encodeURIComponent(window.location.pathname)}`;
-      return;
-    }
-
     const accountId = buyBtn.dataset.accountId!;
 
-    // Create order
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .insert({
-        buyer_id: user.id,
-        total_price: 0, // will be set properly by Edge Function
-        status: 'pending',
-        mayar_payment_url: null,
-        mayar_invoice_id: null,
-      })
-      .select()
-      .single();
+    try {
+      // Create order & item via API now (to be safer and handle auth correctly)
+      // Actually, for now let's keep direct supabase but handle the buyer_id carefully
+      // Since supabase client is anon, it relies on JWT in the 'Authorization' header
+      // But we aren't passing it. We should use an API route for this.
+      
+      const res = await fetch('/api/create-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accountId }),
+      });
 
-    if (orderError || !order) {
-      errorDiv.textContent = 'Gagal membuat order: ' + (orderError?.message ?? 'Unknown error');
+      const result = await res.json();
+
+      if (!res.ok || !result.paymentUrl) {
+        throw new Error(result.error ?? 'Gagal membuat payment link.');
+      }
+
+      window.location.href = result.paymentUrl;
+    } catch (err: any) {
+      errorDiv.textContent = err.message;
       errorDiv.style.display = 'block';
       if (buyText) buyText.textContent = 'Beli Sekarang';
       if (buyIcon) buyIcon.style.display = 'block';
       buyBtn.disabled = false;
-      return;
     }
-
-    // Insert order item
-    await supabase.from('order_items').insert({
-      order_id: order.id,
-      account_id: accountId,
-      price: 0,
-    });
-
-    // Call Edge Function to create Mayar payment
-    const res = await fetch('/api/create-payment', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId: order.id }),
-    });
-
-    const result = await res.json();
-
-    if (!res.ok || !result.paymentUrl) {
-      errorDiv.textContent = result.error ?? 'Gagal membuat payment link.';
-      errorDiv.style.display = 'block';
-      if (buyText) buyText.textContent = 'Beli Sekarang';
-      if (buyIcon) buyIcon.style.display = 'block';
-      buyBtn.disabled = false;
-      return;
-    }
-
-    window.location.href = result.paymentUrl;
   });
 </script>
