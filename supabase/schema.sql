@@ -15,7 +15,7 @@ create extension if not exists "uuid-ossp";
 -- 2. Custom types
 -- ─────────────────────────────────────────────
 
-create type user_role as enum ('buyer','seller','admin');
+create type user_role as enum ('buyer','admin');
 
 create type account_status as enum (
   'available',

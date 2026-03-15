@@ -29,7 +29,8 @@ function formatOrder(o: { total_price: number; created_at: string }) {
       <p style="color:var(--text-secondary); font-size:14px; margin:0;">{orders?.length ?? 0} order</p>
     </div>
 
-    <div class="card" style="overflow:hidden;">
+              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Tanggal</th>
+              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Aksi</th>
       {orders && orders.length > 0 ? (
         <table style="width:100%; border-collapse:collapse;">
           <thead>
@@ -59,6 +60,15 @@ function formatOrder(o: { total_price: number; created_at: string }) {
                     </span>
                   </td>
                   <td style="padding:14px 20px; font-size:13px; color:var(--text-secondary);">{date}</td>
+                  <td style="padding:14px 20px; font-size:13px;">
+                    {row.status === 'pending' ? (
+                      <button class="verify-order-btn" data-order-id={row.id} style="font-size:12px; padding:6px 10px; border-radius:8px; border:none; cursor:pointer; background:#22c55e; color:#0f172a; font-weight:600;">
+                        Verifikasi & Kirim Akun
+                      </button>
+                    ) : (
+                      <span style="font-size:12px; color:var(--text-secondary);">-</span>
+                    )}
+                  </td>
                 </tr>
               );
             })}
@@ -75,3 +85,49 @@ function formatOrder(o: { total_price: number; created_at: string }) {
   .table-row:hover { background: var(--bg-secondary); }
   .table-row:last-child { border-bottom: none; }
 </style>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>('.verify-order-btn');
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const orderId = btn.dataset.orderId;
+      if (!orderId) return;
+
+      if (!confirm('Tandai order ini sebagai LUNAS dan kirim detail akun ke email buyer?')) {
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Memproses...';
+
+      try {
+        const res = await fetch('/api/admin/orders/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId }),
+        });
+
+        const result = await res.json();
+        if (!res.ok) {
+          throw new Error(result.error || 'Gagal memverifikasi order');
+        }
+
+        // Update status di UI
+        const row = btn.closest('tr');
+        const statusChip = row?.querySelector('td:nth-child(4) span') as HTMLElement | null;
+        if (statusChip) {
+          statusChip.textContent = 'paid';
+          statusChip.style.background = 'rgba(34,197,94,0.1)';
+          statusChip.style.color = '#22c55e';
+        }
+
+        btn.textContent = 'Sudah Diverifikasi';
+      } catch (err: any) {
+        alert(err.message || 'Terjadi kesalahan');
+        btn.disabled = false;
+        btn.textContent = 'Verifikasi & Kirim Akun';
+      }
+    });
+  });
+</script>

@@ -1,4 +1,4 @@
-import * as crypto from 'node:crypto';
+import * as crypto from "node:crypto";
 
 const MAYAR_API_URL = import.meta.env.MAYAR_API_URL as string;
 const MAYAR_API_KEY = import.meta.env.MAYAR_API_KEY as string;
@@ -10,6 +10,8 @@ export interface MayarInvoicePayload {
   orderId: string;
   description?: string;
   redirectUrl?: string;
+  email: string;
+  mobile?: string;
 }
 
 export interface MayarInvoiceResponse {
@@ -20,19 +22,40 @@ export interface MayarInvoiceResponse {
   };
 }
 
-export async function createMayarInvoice(payload: MayarInvoicePayload): Promise<MayarInvoiceResponse> {
+export async function createMayarInvoice(
+  payload: MayarInvoicePayload,
+): Promise<MayarInvoiceResponse> {
+  // Pastikan mobile memenuhi minimal panjang 10 karakter (sesuai validasi Mayar)
+  const safeMobile =
+    payload.mobile && payload.mobile.length >= 10
+      ? payload.mobile
+      : "0812345678";
+
   const body = {
     name: payload.name,
     amount: payload.amount,
     description: payload.description ?? `Order #${payload.orderId}`,
-    redirectUrl: payload.redirectUrl ?? `${import.meta.env.PUBLIC_APP_URL}/dashboard/buyer/orders`,
+    // Setelah pembayaran, arahkan kembali ke halaman shop (dashboard buyer sudah dihapus)
+    redirectUrl:
+      payload.redirectUrl ?? `${import.meta.env.PUBLIC_APP_URL}/shop`,
     externalId: payload.orderId,
+    email: payload.email,
+    mobile: safeMobile,
+    items: [
+      {
+        // Struktur field mengikuti error Mayar: description, quantity, rate
+        name: payload.description ?? `Order #${payload.orderId}`,
+        description: payload.description ?? `Order #${payload.orderId}`,
+        quantity: 1,
+        rate: payload.amount,
+      },
+    ],
   };
 
   const res = await fetch(`${MAYAR_API_URL}/invoice/create`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       Authorization: `Bearer ${MAYAR_API_KEY}`,
     },
     body: JSON.stringify(body),
@@ -46,11 +69,17 @@ export async function createMayarInvoice(payload: MayarInvoicePayload): Promise<
   return res.json() as Promise<MayarInvoiceResponse>;
 }
 
-export function verifyMayarSignature(payload: string, signature: string): boolean {
+export function verifyMayarSignature(
+  payload: string,
+  signature: string,
+): boolean {
   const expected = crypto
-    .createHmac('sha256', MAYAR_WEBHOOK_SECRET)
+    .createHmac("sha256", MAYAR_WEBHOOK_SECRET)
     .update(payload)
-    .digest('hex');
+    .digest("hex");
   // Constant-time comparison to prevent timing attacks
-  return crypto.timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(signature, 'hex'));
+  return crypto.timingSafeEqual(
+    Buffer.from(expected, "hex"),
+    Buffer.from(signature, "hex"),
+  );
 }

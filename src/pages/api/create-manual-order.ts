@@ -1,7 +1,6 @@
 import type { APIRoute } from "astro";
 import { supabaseAdmin } from "../../lib/supabaseAdmin";
 import { getCurrentUser } from "../../lib/auth";
-import { createMayarInvoice } from "../../lib/mayar";
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -20,7 +19,6 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    // 1. Fetch account
     const { data: account, error: accError } = await supabaseAdmin
       .from("accounts")
       .select("id, price, title, status")
@@ -40,7 +38,6 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // 2. Create order
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
       .insert({
@@ -51,44 +48,25 @@ export const POST: APIRoute = async ({ request }) => {
       .select()
       .single();
 
-    if (orderError) {
+    if (orderError || !order) {
       return new Response(JSON.stringify({ error: "Gagal membuat order" }), {
         status: 500,
       });
     }
 
-    // 3. Create order item
     await supabaseAdmin.from("order_items").insert({
       order_id: order.id,
       account_id: account.id,
       price: account.price,
     });
 
-    // 4. Create Mayar invoice
-    const invoice = await createMayarInvoice({
-      name: user.name || "Pembeli",
-      amount: account.price,
-      orderId: order.id,
-      description: `TokoAkun Order #${order.id.slice(0, 8)} - ${account.title}`,
-      email: user.email,
-      // Jika nanti kamu simpan nomor HP di profil user,
-      // bisa diganti dengan nilai sebenarnya.
-      mobile: "",
-    });
-
-    // 5. Update order with Mayar details
-    await supabaseAdmin
-      .from("orders")
-      .update({
-        mayar_payment_url: invoice.data.link,
-        mayar_invoice_id: invoice.data.id,
-      })
-      .eq("id", order.id);
-
-    return new Response(JSON.stringify({ paymentUrl: invoice.data.link }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ success: true, orderId: order.id }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,

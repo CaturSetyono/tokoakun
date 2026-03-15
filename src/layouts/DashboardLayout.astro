@@ -5,7 +5,7 @@ import DashboardSidebar from '../components/DashboardSidebar.astro';
 
 interface Props {
   title: string;
-  role: 'admin' | 'seller' | 'buyer';
+  role: 'admin' | 'buyer';
   activeMenu?: string;
 }
 
@@ -17,9 +17,9 @@ if (!userId) {
   return Astro.redirect('/login');
 }
 
-// Role verification
+// Role verification: only admin can access admin/seller tools; buyers limited
 if (userRole !== role && userRole !== 'admin') {
-  return Astro.redirect(`/dashboard/${userRole}`);
+  return Astro.redirect('/shop');
 }
 ---
 

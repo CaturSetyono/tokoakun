@@ -1,6 +1,6 @@
 ---
 import PublicLayout from '../layouts/PublicLayout.astro';
-import { ShoppingCart, Briefcase } from 'lucide-astro';
+import { ShoppingCart } from 'lucide-astro';
 ---
 
 <PublicLayout title="Register">
@@ -8,7 +8,7 @@ import { ShoppingCart, Briefcase } from 'lucide-astro';
     <div class="card" style="width:100%; max-width:440px; padding:40px;">
       <div style="text-align:center; margin-bottom:32px;">
         <h1 style="font-size:26px; font-weight:700; margin:0 0 8px;">Buat Akun</h1>
-        <p style="color:var(--text-secondary); font-size:14px; margin:0;">Bergabung sebagai buyer atau seller</p>
+        <p style="color:var(--text-secondary); font-size:14px; margin:0;">Buat akun pembeli untuk mulai bertransaksi</p>
       </div>
 
       <form id="register-form">
@@ -25,26 +25,15 @@ import { ShoppingCart, Briefcase } from 'lucide-astro';
           <input type="password" id="password" class="form-input" placeholder="Min. 8 karakter" minlength="8" required />
         </div>
 
-        <!-- Role selector -->
+        <!-- Role: selalu buyer (public hanya bisa jadi pembeli) -->
         <div class="form-group">
-          <label class="form-label">Daftar sebagai</label>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:4px;">
-            <label class="role-option" id="role-buyer">
-              <input type="radio" name="role" value="buyer" checked style="display:none;" />
-              <div class="role-card active" id="card-buyer">
-                <ShoppingCart size={24} style="margin-bottom:4px;" />
-                <span style="font-weight:600; font-size:14px;">Buyer</span>
-                <span style="font-size:11px; color:var(--text-secondary);">Beli akun digital</span>
-              </div>
-            </label>
-            <label class="role-option" id="role-seller">
-              <input type="radio" name="role" value="seller" style="display:none;" />
-              <div class="role-card" id="card-seller">
-                <Briefcase size={24} style="margin-bottom:4px;" />
-                <span style="font-weight:600; font-size:14px;">Seller</span>
-                <span style="font-size:11px; color:var(--text-secondary);">Jual akun digital</span>
-              </div>
-            </label>
+          <label class="form-label">Tipe akun</label>
+          <div class="role-card active" id="card-buyer" style="margin-top:4px; display:flex; flex-direction:row; justify-content:flex-start; gap:10px; align-items:center;">
+            <ShoppingCart size={24} />
+            <div>
+              <div style="font-weight:600; font-size:14px;">Buyer</div>
+              <div style="font-size:11px; color:var(--text-secondary);">Akun ini hanya untuk membeli</div>
+            </div>
           </div>
         </div>
 
@@ -101,23 +90,6 @@ import { ShoppingCart, Briefcase } from 'lucide-astro';
 </style>
 
 <script>
-  // Role card toggle
-  const buyerCard = document.getElementById('card-buyer')!;
-  const sellerCard = document.getElementById('card-seller')!;
-  const buyerInput = document.querySelector<HTMLInputElement>('input[value="buyer"]')!;
-  const sellerInput = document.querySelector<HTMLInputElement>('input[value="seller"]')!;
-
-  document.getElementById('role-buyer')?.addEventListener('click', () => {
-    buyerCard.classList.add('active');
-    sellerCard.classList.remove('active');
-    buyerInput.checked = true;
-  });
-  document.getElementById('role-seller')?.addEventListener('click', () => {
-    sellerCard.classList.add('active');
-    buyerCard.classList.remove('active');
-    sellerInput.checked = true;
-  });
-
   // Form submit
   const form = document.getElementById('register-form') as HTMLFormElement;
   const errorMsg = document.getElementById('error-msg')!;
@@ -134,7 +106,8 @@ import { ShoppingCart, Briefcase } from 'lucide-astro';
     const name = (document.getElementById('name') as HTMLInputElement).value.trim();
     const email = (document.getElementById('email') as HTMLInputElement).value.trim();
     const password = (document.getElementById('password') as HTMLInputElement).value;
-    const role = (document.querySelector<HTMLInputElement>('input[name="role"]:checked')?.value ?? 'buyer') as 'buyer' | 'seller';
+    // Public registration selalu membuat akun buyer
+    const role = 'buyer';
 
     try {
       const response = await fetch('/api/auth/register', {

@@ -89,8 +89,7 @@ import PublicLayout from '../layouts/PublicLayout.astro';
       
       window.location.href = redirectTo ?? (
         role === 'admin' ? '/dashboard/admin'
-        : role === 'seller' ? '/dashboard/seller'
-        : '/dashboard/buyer'
+        : '/shop'
       );
     } catch (err: any) {
       errorMsg.textContent = err.message;

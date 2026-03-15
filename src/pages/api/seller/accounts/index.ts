@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { supabaseAdmin } from '../../../lib/supabaseAdmin';
-import { getCurrentUser } from '../../../lib/auth';
+import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
+import { getCurrentUser } from '../../../../lib/auth';
 
 export const POST: APIRoute = async ({ request }) => {
   try {

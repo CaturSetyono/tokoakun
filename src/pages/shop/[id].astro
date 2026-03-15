@@ -68,23 +68,35 @@ const isAvailable = account.status === 'available';
               <CheckCircle size={16} style="color:#22c55e;" /> Auto delivery setelah pembayaran
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
-              <Lock size={16} /> Transaksi aman via Mayar.id
+              <Lock size={16} /> Tersedia pembayaran otomatis via Mayar.id atau manual (verifikasi admin)
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
-              <Mail size={16} /> Akun dikirim via halaman pesanan
+              <Mail size={16} /> Akun akan dikirim via email setelah pembayaran diverifikasi admin
             </div>
           </div>
 
           {isAvailable ? (
-            <button
-              id="buy-btn"
-              data-account-id={account.id}
-              data-logged-in={userId ? 'true' : 'false'}
-              class="btn-accent"
-              style="width:100%; padding:14px; font-size:15px; display:flex; align-items:center; justify-content:center; gap:8px;"
-            >
-              <ShoppingCart size={18} id="buy-icon" /> <span id="buy-text">Beli Sekarang</span>
-            </button>
+            <>
+              <button
+                id="buy-btn"
+                data-account-id={account.id}
+                data-logged-in={userId ? 'true' : 'false'}
+                class="btn-accent"
+                style="width:100%; padding:14px; font-size:15px; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px;"
+              >
+                <ShoppingCart size={18} id="buy-icon" /> <span id="buy-text">Bayar Otomatis (Mayar)</span>
+              </button>
+
+              <button
+                id="manual-btn"
+                data-account-id={account.id}
+                data-logged-in={userId ? 'true' : 'false'}
+                class="btn-outline"
+                style="width:100%; padding:12px; font-size:14px; display:flex; align-items:center; justify-content:center; gap:8px;"
+              >
+                <ShoppingCart size={16} /> <span id="manual-text">Bayar Manual (Verifikasi Admin)</span>
+              </button>
+            </>
           ) : (
             <div style="background:rgba(239,68,68,0.1); color:#ef4444; padding:14px; border-radius:12px; text-align:center; font-weight:600; font-size:15px;">
               Akun Sudah Terjual
@@ -100,8 +112,10 @@ const isAvailable = account.status === 'available';
 
 <script>
   const buyBtn = document.getElementById('buy-btn') as HTMLButtonElement | null;
+  const manualBtn = document.getElementById('manual-btn') as HTMLButtonElement | null;
   const buyIcon = document.getElementById('buy-icon');
   const buyText = document.getElementById('buy-text');
+  const manualText = document.getElementById('manual-text');
   const errorDiv = document.getElementById('buy-error')!;
 
   buyBtn?.addEventListener('click', async () => {
@@ -143,6 +157,46 @@ const isAvailable = account.status === 'available';
       if (buyText) buyText.textContent = 'Beli Sekarang';
       if (buyIcon) buyIcon.style.display = 'block';
       buyBtn.disabled = false;
+    }
+  });
+
+  manualBtn?.addEventListener('click', async () => {
+    if (!manualBtn) return;
+
+    const isLoggedIn = manualBtn.dataset.loggedIn === 'true';
+    if (!isLoggedIn) {
+      window.location.href = `/login?redirectTo=${encodeURIComponent(window.location.pathname)}`;
+      return;
+    }
+
+    errorDiv.style.display = 'none';
+    if (manualText) manualText.textContent = 'Membuat Order...';
+    manualBtn.disabled = true;
+
+    const accountId = manualBtn.dataset.accountId!;
+
+    try {
+      const res = await fetch('/api/create-manual-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accountId }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok || !result.success) {
+        throw new Error(result.error ?? 'Gagal membuat order manual.');
+      }
+
+      alert('Order manual berhasil dibuat. Silakan lakukan pembayaran sesuai instruksi dan tunggu admin melakukan verifikasi.');
+
+      if (manualText) manualText.textContent = 'Bayar Manual (Verifikasi Admin)';
+      manualBtn.disabled = false;
+    } catch (err: any) {
+      errorDiv.textContent = err.message;
+      errorDiv.style.display = 'block';
+      if (manualText) manualText.textContent = 'Bayar Manual (Verifikasi Admin)';
+      manualBtn.disabled = false;
     }
   });
 </script>

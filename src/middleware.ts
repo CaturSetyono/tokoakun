@@ -15,15 +15,20 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
   const isAuthOnly = AUTH_ONLY_ROUTES.includes(pathname);
 
-  if (!isProtected && !isAuthOnly) {
-    return next();
-  }
-
-  // Get session from cookie
+  // Get session from cookie for all routes so Navbar & pages
+  // can access user info via Astro.locals
   const sessionToken = cookies.get("session")?.value;
   const user = sessionToken ? await verifySession(sessionToken) : null;
 
-  // Not logged in → redirect to login
+  if (user) {
+    const role = user.role ?? "buyer";
+    context.locals.userId = user.id;
+    context.locals.userRole = role;
+    context.locals.userEmail = user.email;
+    context.locals.userName = user.name;
+  }
+
+  // Not logged in → redirect to login when accessing protected routes
   if (isProtected && !user) {
     return redirect(`/login?redirectTo=${encodeURIComponent(pathname)}`);
   }
@@ -31,41 +36,25 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // Already logged in → redirect away from login/register
   if (isAuthOnly && user) {
     const role = user.role ?? "buyer";
-    return redirect(
-      role === "admin"
-        ? "/dashboard/admin"
-        : role === "seller"
-          ? "/dashboard/seller"
-          : "/dashboard/buyer",
-    );
+    return redirect(role === "admin" ? "/dashboard/admin" : "/shop");
   }
 
-  // Role-based dashboard guard: /dashboard/seller only for sellers, etc.
+  // Role-based dashboard guard: only admin can access dashboard areas
   if (isProtected && user) {
     const role = user.role ?? "buyer";
 
-    // Expose user info to pages via locals
-    context.locals.userId = user.id;
-    context.locals.userRole = role;
-    context.locals.userEmail = user.email;
-    context.locals.userName = user.name;
+    // No more buyer dashboard area: redirect any /dashboard/buyer* access
+    if (pathname.startsWith("/dashboard/buyer")) {
+      return redirect(role === "admin" ? "/dashboard/admin" : "/shop");
+    }
 
     if (pathname.startsWith("/dashboard/admin") && role !== "admin") {
-      return redirect("/dashboard/" + role);
+      // Non-admins trying to hit admin dashboard
+      return redirect("/shop");
     }
-    if (
-      pathname.startsWith("/dashboard/seller") &&
-      role !== "seller" &&
-      role !== "admin"
-    ) {
-      return redirect("/dashboard/buyer");
-    }
-    if (
-      pathname.startsWith("/dashboard/buyer") &&
-      role !== "buyer" &&
-      role !== "admin"
-    ) {
-      return redirect("/dashboard/seller");
+    if (pathname.startsWith("/dashboard/seller") && role !== "admin") {
+      // Hanya admin yang boleh mengakses area seller (admin sebagai penjual)
+      return redirect("/shop");
     }
   }
 

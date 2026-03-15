@@ -1,6 +1,6 @@
-export type UserRole = 'admin' | 'seller' | 'buyer';
-export type AccountStatus = 'available' | 'sold';
-export type OrderStatus = 'pending' | 'paid' | 'cancelled';
+export type UserRole = "admin" | "buyer";
+export type AccountStatus = "available" | "sold";
+export type OrderStatus = "pending" | "paid" | "cancelled";
 
 export type Database = {
   public: {
