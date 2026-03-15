@@ -1,17 +1,19 @@
-import type { APIRoute } from 'astro';
-import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
-import { getCurrentUser } from '../../../../lib/auth';
+import type { APIRoute } from "astro";
+import { supabaseAdmin } from "../../../../lib/supabaseAdmin";
+import { getCurrentUser } from "../../../../lib/auth";
 
 export const POST: APIRoute = async ({ request }) => {
   try {
     const user = await getCurrentUser(request);
-    if (!user || (user.role !== 'seller' && user.role !== 'admin')) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+    if (!user || (user.role !== "seller" && user.role !== "admin")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+      });
     }
 
     const body = await request.json();
     const isBulk = Array.isArray(body);
-    
+
     if (isBulk) {
       const accountsToInsert = body.map((acc: any) => ({
         seller_id: user.id,
@@ -21,25 +23,44 @@ export const POST: APIRoute = async ({ request }) => {
         email_account: acc.email_account,
         password_account: acc.password_account,
         thumbnail_url: acc.thumbnail_url,
-        status: 'available'
+        status: "available",
       }));
 
       const { data, error } = await supabaseAdmin
-        .from('accounts')
+        .from("accounts")
         .insert(accountsToInsert)
         .select();
 
-      if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+      if (error)
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 500,
+        });
       return new Response(JSON.stringify(data), { status: 201 });
     } else {
-      const { title, category, price, email_account, password_account, thumbnail_url } = body;
+      const {
+        title,
+        category,
+        price,
+        email_account,
+        password_account,
+        thumbnail_url,
+      } = body;
 
-      if (!title || !category || !price || !email_account || !password_account) {
-        return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400 });
+      if (
+        !title ||
+        !category ||
+        !price ||
+        !email_account ||
+        !password_account
+      ) {
+        return new Response(
+          JSON.stringify({ error: "Missing required fields" }),
+          { status: 400 },
+        );
       }
 
       const { data, error } = await supabaseAdmin
-        .from('accounts')
+        .from("accounts")
         .insert({
           seller_id: user.id,
           title,
@@ -48,16 +69,20 @@ export const POST: APIRoute = async ({ request }) => {
           email_account,
           password_account,
           thumbnail_url,
-          status: 'available'
+          status: "available",
         })
         .select()
         .single();
 
-      if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+      if (error)
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 500,
+        });
       return new Response(JSON.stringify(data), { status: 201 });
     }
-
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+    });
   }
 };

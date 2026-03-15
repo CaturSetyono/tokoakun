@@ -60,13 +60,10 @@ export const POST: APIRoute = async ({ request }) => {
       price: account.price,
     });
 
-    return new Response(
-      JSON.stringify({ success: true, orderId: order.id }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
+    return new Response(JSON.stringify({ success: true, orderId: order.id }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
