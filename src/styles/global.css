@@ -10,8 +10,8 @@
   --card-bg: #ffffff;
   --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
   --border-color: #e5e7eb;
-  --accent: #a6ff00;
-  --accent-gradient: linear-gradient(90deg, #b4ff2b, #8dff00);
+  --accent: #e8283d;
+  --accent-gradient: linear-gradient(90deg, #ff4f60, #cc1a2e);
   --nav-bg: rgba(255, 255, 255, 0.85);
 }
 
@@ -52,7 +52,7 @@ body {
 
 .btn-accent {
   background: var(--accent-gradient);
-  color: #111111;
+  color: #ffffff;
   font-weight: 500;
   font-size: 14px;
   border-radius: 12px;
