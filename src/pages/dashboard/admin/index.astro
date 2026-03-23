@@ -1,4 +1,4 @@
----
+﻿---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
 import { supabase } from '../../../lib/supabase';
 import { Users, Package, CheckCircle, Folder, CircleDollarSign, Hash, LineChart } from 'lucide-astro';
@@ -37,7 +37,7 @@ const { count: soldAccounts } = await supabase
         { label: 'Total Orders', value: totalOrders ?? 0, icon: Package, color: '#8b5cf6' },
         { label: 'Paid Orders', value: paidOrders ?? 0, icon: CheckCircle, color: '#22c55e' },
         { label: 'Total Accounts', value: totalAccounts ?? 0, icon: Folder, color: '#f59e0b' },
-        { label: 'Accounts Sold', value: soldAccounts ?? 0, icon: CircleDollarSign, color: '#a6ff00' },
+        { label: 'Accounts Sold', value: soldAccounts ?? 0, icon: CircleDollarSign, color: '#e8283d' },
       ].map(stat => {
         const Icon = stat.icon;
         return (
@@ -69,7 +69,7 @@ const { count: soldAccounts } = await supabase
           </div>
           <div style="display:flex; justify-content:space-between;">
             <span style="color:var(--text-secondary);">Accounts sold rate</span>
-            <span style="font-weight:600; color:#a6ff00;">{totalAccounts ? Math.round(((soldAccounts ?? 0) / totalAccounts) * 100) : 0}%</span>
+            <span style="font-weight:600; color:#e8283d;">{totalAccounts ? Math.round(((soldAccounts ?? 0) / totalAccounts) * 100) : 0}%</span>
           </div>
         </div>
       </div>
