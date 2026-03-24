@@ -1,4 +1,4 @@
----
+﻿---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 import { idrFormat, NICHE_LABEL } from '../../../lib/cart';
@@ -84,7 +84,7 @@ const itemStatusStyle: Record<string, string> = {
                       <div class="item-row" data-item-id={item.id}>
                         <div style="flex:1;">
                           <div style="display:flex; gap:8px; align-items:center; margin-bottom:4px;">
-                            <span style="font-size:10px; padding:2px 8px; border-radius:999px; background:rgba(166,255,0,0.12); color:var(--accent); font-weight:600; text-transform:uppercase;">
+                            <span style="font-size:10px; padding:2px 8px; border-radius:999px; background:rgba(232,40,61,0.12); color:var(--accent); font-weight:600; text-transform:uppercase;">
                               {NICHE_LABEL[niche] ?? niche}
                             </span>
                             <span style={`font-size:10px; padding:2px 8px; border-radius:999px; font-weight:600; ${itemStatusStyle[item.status]}`}>
