@@ -1,4 +1,4 @@
----
+﻿---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
 import { supabase } from '../../../lib/supabase';
 import { Folder, CheckCircle, CircleDollarSign } from 'lucide-astro';
@@ -39,7 +39,7 @@ const formattedRevenue = new Intl.NumberFormat('id-ID', {
       {[
         { label: 'Akun Tersedia', value: totalAvailable ?? 0, icon: Folder, color: '#3b82f6' },
         { label: 'Akun Terjual', value: totalSold ?? 0, icon: CheckCircle, color: '#22c55e' },
-        { label: 'Total Revenue', value: formattedRevenue, icon: CircleDollarSign, color: '#a6ff00' },
+        { label: 'Total Revenue', value: formattedRevenue, icon: CircleDollarSign, color: '#e8283d' },
       ].map(stat => {
         const Icon = stat.icon;
         return (
