@@ -1,4 +1,4 @@
----
+﻿---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 import { Inbox } from 'lucide-astro';
@@ -40,7 +40,7 @@ const { data: soldAccounts } = await supabaseAdmin
                 <tr style="border-bottom:1px solid var(--border-color);" class="table-row">
                   <td style="padding:14px 20px; font-size:14px; font-weight:500;">{acc.title}</td>
                   <td style="padding:14px 20px;">
-                    <span style="font-size:12px; background:rgba(166,255,0,0.1); color:var(--accent); padding:3px 10px; border-radius:20px;">{acc.category}</span>
+                    <span style="font-size:12px; background:rgba(232,40,61,0.1); color:var(--accent); padding:3px 10px; border-radius:20px;">{acc.category}</span>
                   </td>
                   <td style="padding:14px 20px; font-size:14px; font-weight:600;">{price}</td>
                   <td style="padding:14px 20px; font-size:13px; color:var(--text-secondary);">{acc.users?.name ?? '-'}</td>
