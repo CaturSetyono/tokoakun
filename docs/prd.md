@@ -146,14 +146,14 @@ Fitur untuk buyer:
 
 ### 5.4 Modul Pembayaran
 
-Sistem menggunakan **payment gateway Mayar.id**.
+Sistem menggunakan **pembayaran manual dengan verifikasi admin**.
 
 Fitur:
 
-- Generate payment link
-- Redirect buyer ke halaman pembayaran
-- Webhook untuk konfirmasi pembayaran
-- Update status order otomatis
+- Buyer membuat order
+- Buyer melakukan pembayaran sesuai instruksi (transfer bank / e-wallet / QRIS)
+- Admin melakukan verifikasi pembayaran dari dashboard
+- Update status order secara manual setelah pembayaran terverifikasi
 
 ---
 
@@ -209,7 +209,7 @@ Dashboard berbeda untuk setiap role:
 | **Frontend** | Astro (TypeScript) + Tailwind CSS          |
 | **Backend**  | Supabase (Serverless API + Edge Functions) |
 | **Database** | PostgreSQL                                 |
-| **Payment**  | Mayar.id                                   |
+| **Payment**  | Manual (verifikasi admin)                  |
 | **Storage**  | Supabase Storage                           |
 | **Auth**     | Supabase Authentication                    |
 | **Deploy**   | Vercel                                     |
@@ -270,19 +270,15 @@ Buyer memilih akun
         ↓
 Klik tombol beli
         ↓
-Sistem membuat order
+Sistem membuat order (status "pending")
         ↓
-Sistem membuat payment link dari Mayar.id
+Buyer melakukan pembayaran manual sesuai instruksi
         ↓
-Buyer diarahkan ke halaman pembayaran
+Admin membuka dashboard orders dan memverifikasi pembayaran
         ↓
-Buyer menyelesaikan pembayaran
+Admin menekan tombol "Verify" → status order berubah menjadi "paid"
         ↓
-Mayar mengirim webhook ke server
-        ↓
-Status order berubah menjadi "paid"
-        ↓
-Sistem mengirim akun ke buyer
+Sistem mengirim akun ke buyer via email
         ↓
 Status akun berubah menjadi "sold"
 ```
@@ -297,8 +293,7 @@ Status akun berubah menjadi "sold"
 | GET    | /accounts/{id}    | Public     | Melihat detail akun           |
 | POST   | /accounts         | Seller     | Menambahkan akun              |
 | POST   | /orders           | Buyer      | Membuat order                 |
-| POST   | /payments/create  | Buyer      | Membuat pembayaran Mayar      |
-| POST   | /payments/webhook | System     | Webhook konfirmasi pembayaran |
+| POST   | /admin/orders/verify | Admin   | Verifikasi pembayaran order   |
 | GET    | /orders           | Buyer      | Melihat riwayat order         |
 | GET    | /dashboard        | Role-based | Data dashboard                |
 
@@ -310,8 +305,8 @@ Status akun berubah menjadi "sold"
 - [ ] Seller dapat menambahkan akun untuk dijual
 - [ ] Buyer dapat melihat daftar akun
 - [ ] Buyer dapat membeli akun
-- [ ] Sistem terintegrasi dengan Mayar.id
-- [ ] Sistem otomatis memberikan akun setelah pembayaran
+- [ ] Admin dapat memverifikasi pembayaran order
+- [ ] Sistem otomatis memberikan akun setelah pembayaran diverifikasi
 - [ ] Dashboard tersedia untuk admin, seller, dan buyer
 
 ---
@@ -323,14 +318,13 @@ Status akun berubah menjadi "sold"
 | Phase 1 | Desain database & ERD             | 1 minggu |
 | Phase 2 | Implementasi authentication       | 1 minggu |
 | Phase 3 | Marketplace & manajemen akun      | 2 minggu |
-| Phase 4 | Integrasi Mayar.id & sistem order | 1 minggu |
+| Phase 4 | Sistem order & verifikasi admin   | 1 minggu |
 | Phase 5 | Dashboard & testing               | 1 minggu |
 
 ---
 
 ## 13. Open Questions
 
-- [ ] Apakah pembayaran hanya menggunakan metode yang tersedia di Mayar atau perlu metode tambahan? hanya yang disediakan platform mayar
 - [ ] Apakah seller dapat menjual lebih dari satu kategori akun? ya boleh saja
 
 ---
