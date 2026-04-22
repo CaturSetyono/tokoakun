@@ -90,8 +90,6 @@ export type Database = {
           buyer_id: string;
           total_price: number;
           status: OrderStatus;
-          mayar_payment_url: string | null;
-          mayar_invoice_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -100,8 +98,6 @@ export type Database = {
           buyer_id: string;
           total_price?: number;
           status?: OrderStatus;
-          mayar_payment_url?: string | null;
-          mayar_invoice_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -110,8 +106,6 @@ export type Database = {
           buyer_id?: string;
           total_price?: number;
           status?: OrderStatus;
-          mayar_payment_url?: string | null;
-          mayar_invoice_id?: string | null;
           updated_at?: string;
         };
         Relationships: [];
