@@ -106,10 +106,6 @@ create table public.orders (
 
   total_price numeric(12,0) not null default 0,
 
-  mayar_invoice_id text,
-
-  mayar_payment_url text,
-
   created_at timestamptz not null default now(),
 
   updated_at timestamptz not null default now()
