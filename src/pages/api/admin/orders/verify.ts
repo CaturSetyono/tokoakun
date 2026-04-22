@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { supabaseAdmin } from "../../../../lib/supabaseAdmin";
 import { requireAdmin } from "../../../../lib/auth";
+import { sendOrderEmail } from "../../../../lib/order-email";
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -79,67 +80,20 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    // Panggil Apps Script untuk kirim email detail akun
-    const webhookUrl = import.meta.env.APPSCRIPT_WEBHOOK_URL as
-      | string
-      | undefined;
-    if (!webhookUrl) {
-      console.error("APPSCRIPT_WEBHOOK_URL is not set");
-      return new Response(
-        JSON.stringify({
-          error: "Webhook URL not configured, but order marked as paid.",
-        }),
-        { status: 500 },
-      );
-    }
+    // Kirim email lewat Apps Script (jangan gagalkan order jika email gagal)
+    const emailResult = await sendOrderEmail(order.id);
 
-    const payload = {
-      orderId: order.id,
-      buyerEmail: (order as any).users?.email as string,
-      buyerName: (order as any).users?.name as string,
-      totalPrice: order.total_price,
-      accounts: items
-        .map((item: any) => item.accounts)
-        .filter((acc: any) => !!acc)
-        .map((acc: any) => ({
-          title: acc.title,
-          category: acc.category,
-          email_account: acc.email_account,
-          password_account: acc.password_account,
-        })),
-    };
-
-    try {
-      const res = await fetch(webhookUrl, {
-        method: "POST",
+    return new Response(
+      JSON.stringify({
+        success: true,
+        emailSent: emailResult.success,
+        emailError: emailResult.error ?? null,
+      }),
+      {
+        status: 200,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const body = await res.text();
-      if (!res.ok) {
-        console.error("Apps Script error:", res.status, body);
-        return new Response(
-          JSON.stringify({
-            error: "Order paid, but failed to trigger email webhook.",
-          }),
-          { status: 500 },
-        );
-      }
-    } catch (err: any) {
-      console.error("Failed to call Apps Script webhook:", err?.message ?? err);
-      return new Response(
-        JSON.stringify({
-          error: "Order paid, but failed to trigger email webhook.",
-        }),
-        { status: 500 },
-      );
-    }
-
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+      },
+    );
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
