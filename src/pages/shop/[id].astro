@@ -65,10 +65,10 @@ const isAvailable = account.status === 'available';
 
           <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:24px; font-size:13px; color:var(--text-secondary);">
             <div style="display:flex; gap:8px; align-items:center;">
-              <CheckCircle size={16} style="color:#22c55e;" /> Auto delivery setelah pembayaran
+              <CheckCircle size={16} style="color:#22c55e;" /> Auto delivery setelah pembayaran diverifikasi admin
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
-              <Lock size={16} /> Tersedia pembayaran otomatis via Mayar.id atau manual (verifikasi admin)
+              <Lock size={16} /> Pembayaran manual dengan verifikasi admin
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
               <Mail size={16} /> Akun akan dikirim via email setelah pembayaran diverifikasi admin
@@ -76,27 +76,15 @@ const isAvailable = account.status === 'available';
           </div>
 
           {isAvailable ? (
-            <>
-              <button
-                id="buy-btn"
-                data-account-id={account.id}
-                data-logged-in={userId ? 'true' : 'false'}
-                class="btn-accent"
-                style="width:100%; padding:14px; font-size:15px; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px;"
-              >
-                <ShoppingCart size={18} id="buy-icon" /> <span id="buy-text">Bayar Otomatis (Mayar)</span>
-              </button>
-
-              <button
-                id="manual-btn"
-                data-account-id={account.id}
-                data-logged-in={userId ? 'true' : 'false'}
-                class="btn-outline"
-                style="width:100%; padding:12px; font-size:14px; display:flex; align-items:center; justify-content:center; gap:8px;"
-              >
-                <ShoppingCart size={16} /> <span id="manual-text">Bayar Manual (Verifikasi Admin)</span>
-              </button>
-            </>
+            <button
+              id="manual-btn"
+              data-account-id={account.id}
+              data-logged-in={userId ? 'true' : 'false'}
+              class="btn-accent"
+              style="width:100%; padding:14px; font-size:15px; display:flex; align-items:center; justify-content:center; gap:8px;"
+            >
+              <ShoppingCart size={18} /> <span id="manual-text">Beli Sekarang</span>
+            </button>
           ) : (
             <div style="background:rgba(239,68,68,0.1); color:#ef4444; padding:14px; border-radius:12px; text-align:center; font-weight:600; font-size:15px;">
               Akun Sudah Terjual
@@ -111,54 +99,9 @@ const isAvailable = account.status === 'available';
 </PublicLayout>
 
 <script>
-  const buyBtn = document.getElementById('buy-btn') as HTMLButtonElement | null;
   const manualBtn = document.getElementById('manual-btn') as HTMLButtonElement | null;
-  const buyIcon = document.getElementById('buy-icon');
-  const buyText = document.getElementById('buy-text');
   const manualText = document.getElementById('manual-text');
   const errorDiv = document.getElementById('buy-error')!;
-
-  buyBtn?.addEventListener('click', async () => {
-    const isLoggedIn = buyBtn.dataset.loggedIn === 'true';
-    if (!isLoggedIn) {
-      window.location.href = `/login?redirectTo=${encodeURIComponent(window.location.pathname)}`;
-      return;
-    }
-
-    errorDiv.style.display = 'none';
-    if (buyText) buyText.textContent = 'Loading...';
-    if (buyIcon) buyIcon.style.display = 'none';
-    buyBtn.disabled = true;
-
-    const accountId = buyBtn.dataset.accountId!;
-
-    try {
-      // Create order & item via API now (to be safer and handle auth correctly)
-      // Actually, for now let's keep direct supabase but handle the buyer_id carefully
-      // Since supabase client is anon, it relies on JWT in the 'Authorization' header
-      // But we aren't passing it. We should use an API route for this.
-      
-      const res = await fetch('/api/create-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accountId }),
-      });
-
-      const result = await res.json();
-
-      if (!res.ok || !result.paymentUrl) {
-        throw new Error(result.error ?? 'Gagal membuat payment link.');
-      }
-
-      window.location.href = result.paymentUrl;
-    } catch (err: any) {
-      errorDiv.textContent = err.message;
-      errorDiv.style.display = 'block';
-      if (buyText) buyText.textContent = 'Beli Sekarang';
-      if (buyIcon) buyIcon.style.display = 'block';
-      buyBtn.disabled = false;
-    }
-  });
 
   manualBtn?.addEventListener('click', async () => {
     if (!manualBtn) return;
@@ -185,17 +128,17 @@ const isAvailable = account.status === 'available';
       const result = await res.json();
 
       if (!res.ok || !result.success) {
-        throw new Error(result.error ?? 'Gagal membuat order manual.');
+        throw new Error(result.error ?? 'Gagal membuat order.');
       }
 
-      alert('Order manual berhasil dibuat. Silakan lakukan pembayaran sesuai instruksi dan tunggu admin melakukan verifikasi.');
+      alert('Order berhasil dibuat. Silakan lakukan pembayaran sesuai instruksi dan tunggu admin melakukan verifikasi.');
 
-      if (manualText) manualText.textContent = 'Bayar Manual (Verifikasi Admin)';
+      if (manualText) manualText.textContent = 'Beli Sekarang';
       manualBtn.disabled = false;
     } catch (err: any) {
       errorDiv.textContent = err.message;
       errorDiv.style.display = 'block';
-      if (manualText) manualText.textContent = 'Bayar Manual (Verifikasi Admin)';
+      if (manualText) manualText.textContent = 'Beli Sekarang';
       manualBtn.disabled = false;
     }
   });
