@@ -1,0 +1,120 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import { supabaseAdmin } from '../../../lib/supabaseAdmin';
+
+const { data: applications } = await supabaseAdmin
+  .from('reseller_applications')
+  .select('*')
+  .order('created_at', { ascending: false })
+  .limit(100);
+
+const statusStyle: Record<string, string> = {
+  pending: 'background:rgba(234,179,8,0.1); color:#eab308;',
+  approved: 'background:rgba(34,197,94,0.1); color:#22c55e;',
+  rejected: 'background:rgba(239,68,68,0.1); color:#ef4444;',
+};
+---
+
+<DashboardLayout title="Reseller Applications" role="admin" activeMenu="Reseller Applications">
+  <div>
+    <div style="margin-bottom:28px;">
+      <h1 style="font-size:24px; font-weight:700; margin:0 0 4px;">Reseller Applications</h1>
+      <p style="color:var(--text-secondary); font-size:14px; margin:0;">{applications?.length ?? 0} aplikasi</p>
+    </div>
+
+    {applications && applications.length > 0 ? (
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        {applications.map((a) => (
+          <div class="card app-card" data-app-id={a.id}>
+            <div style="padding:18px 22px; display:flex; align-items:center; gap:20px;">
+              <div style="flex:1;">
+                <div style="display:flex; gap:10px; align-items:center; margin-bottom:4px;">
+                  <h3 style="font-size:15px; font-weight:600; margin:0;">{a.full_name}</h3>
+                  <span style={`font-size:11px; padding:3px 10px; border-radius:999px; font-weight:600; ${statusStyle[a.status]}`}>
+                    {a.status}
+                  </span>
+                </div>
+                <div style="font-size:12px; color:var(--text-secondary);">
+                  {a.email} · {a.phone} {a.city && `· ${a.city}`}
+                </div>
+              </div>
+              <div style="font-size:11px; color:var(--text-secondary);">
+                {new Date(a.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+              </div>
+              <button type="button" class="expand-btn btn-outline" style="font-size:11px; padding:6px 12px;">Detail</button>
+            </div>
+
+            <div class="app-body" style="display:none; padding:18px 22px; border-top:1px solid var(--border-color);">
+              {a.experience && (
+                <div style="margin-bottom:12px;">
+                  <div style="font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; margin-bottom:4px;">Pengalaman</div>
+                  <div style="font-size:13px; white-space:pre-wrap;">{a.experience}</div>
+                </div>
+              )}
+              {a.motivation && (
+                <div style="margin-bottom:12px;">
+                  <div style="font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; margin-bottom:4px;">Motivasi</div>
+                  <div style="font-size:13px; white-space:pre-wrap;">{a.motivation}</div>
+                </div>
+              )}
+              {a.admin_note && (
+                <div style="margin-bottom:12px; padding:10px 14px; background:var(--bg-secondary); border-radius:8px;">
+                  <div style="font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; margin-bottom:4px;">Catatan admin</div>
+                  <div style="font-size:13px;">{a.admin_note}</div>
+                </div>
+              )}
+
+              {a.status === 'pending' && (
+                <div style="display:flex; gap:8px; justify-content:flex-end; padding-top:8px;">
+                  <button type="button" class="reject-btn btn-outline" style="font-size:12px; color:#ef4444;">Reject</button>
+                  <button type="button" class="approve-btn btn-accent" style="font-size:12px;">Approve</button>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div class="card" style="padding:60px; text-align:center; color:var(--text-secondary);">Belum ada aplikasi reseller.</div>
+    )}
+  </div>
+</DashboardLayout>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('.expand-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest<HTMLElement>('.app-card')!;
+      const body = card.querySelector<HTMLElement>('.app-body')!;
+      body.style.display = body.style.display === 'block' ? 'none' : 'block';
+    });
+  });
+
+  async function review(appId: string, status: 'approved' | 'rejected') {
+    const note = prompt(`Catatan untuk ${status} (opsional)`, '') ?? '';
+    try {
+      const res = await fetch(`/api/admin/reseller-applications/${appId}/review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, adminNote: note }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal');
+      window.location.reload();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('.approve-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest<HTMLElement>('.app-card')!;
+      review(card.dataset.appId!, 'approved');
+    });
+  });
+  document.querySelectorAll<HTMLButtonElement>('.reject-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest<HTMLElement>('.app-card')!;
+      review(card.dataset.appId!, 'rejected');
+    });
+  });
+</script>
