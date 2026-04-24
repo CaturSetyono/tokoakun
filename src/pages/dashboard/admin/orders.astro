@@ -1,132 +1,240 @@
 ---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
-import { supabase } from '../../../lib/supabase';
+import { supabaseAdmin } from '../../../lib/supabaseAdmin';
+import { idrFormat, NICHE_LABEL } from '../../../lib/cart';
 
-const { data: orders } = await supabase
+const { data: orders } = await supabaseAdmin
   .from('orders')
-  .select('id, total_price, status, created_at, buyer_id, users!buyer_id(name, email)')
+  .select(`
+    id, total_price, status, created_at, buyer_note, buyer_id,
+    users!buyer_id(name, email),
+    order_items(id, quantity, unit_price, line_total, status, product_snapshot, buyer_input, fulfillment_note, delivered_at)
+  `)
   .order('created_at', { ascending: false })
-  .limit(100);
+  .limit(200);
 
-const statusStyle: Record<string, string> = {
-  paid: 'background:rgba(34,197,94,0.1); color:#22c55e;',
+const orderStatusStyle: Record<string, string> = {
   pending: 'background:rgba(234,179,8,0.1); color:#eab308;',
+  paid: 'background:rgba(59,130,246,0.1); color:#3b82f6;',
+  processing: 'background:rgba(168,85,247,0.1); color:#a855f7;',
+  completed: 'background:rgba(34,197,94,0.1); color:#22c55e;',
   cancelled: 'background:rgba(239,68,68,0.1); color:#ef4444;',
 };
 
-function formatOrder(o: { total_price: number; created_at: string }) {
-  return {
-    total: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(o.total_price),
-    date: new Date(o.created_at).toLocaleDateString('id-ID'),
-  };
-}
+const itemStatusStyle: Record<string, string> = {
+  pending: 'background:rgba(234,179,8,0.1); color:#eab308;',
+  processing: 'background:rgba(168,85,247,0.1); color:#a855f7;',
+  delivered: 'background:rgba(34,197,94,0.1); color:#22c55e;',
+  cancelled: 'background:rgba(239,68,68,0.1); color:#ef4444;',
+};
 ---
 
 <DashboardLayout title="All Orders" role="admin" activeMenu="Orders">
   <div>
     <div style="margin-bottom:28px;">
-      <h1 style="font-size:24px; font-weight:700; margin:0 0 4px;">Semua Order</h1>
+      <h1 style="font-size:24px; font-weight:700; margin:0 0 4px;">Orders</h1>
       <p style="color:var(--text-secondary); font-size:14px; margin:0;">{orders?.length ?? 0} order</p>
     </div>
 
-              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Tanggal</th>
-              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Aksi</th>
-      {orders && orders.length > 0 ? (
-        <table style="width:100%; border-collapse:collapse;">
-          <thead>
-            <tr style="border-bottom:1px solid var(--border-color); background:var(--bg-secondary);">
-              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Order ID</th>
-              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Buyer</th>
-              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Total</th>
-              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Status</th>
-              <th style="padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Tanggal</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(orders ?? []).map((o) => {
-              const row = o as any;
-              const { total, date } = formatOrder(row);
-              return (
-                <tr style="border-bottom:1px solid var(--border-color);" class="table-row">
-                  <td style="padding:14px 20px; font-size:12px; font-family:monospace; color:var(--text-secondary);">{row.id.slice(0, 12)}...</td>
-                  <td style="padding:14px 20px; font-size:13px;">
-                    <div style="font-weight:500;">{row.users?.name ?? '-'}</div>
-                    <div style="color:var(--text-secondary); font-size:12px;">{row.users?.email ?? '-'}</div>
-                  </td>
-                  <td style="padding:14px 20px; font-size:14px; font-weight:600;">{total}</td>
-                  <td style="padding:14px 20px;">
-                    <span style={`font-size:12px; padding:3px 10px; border-radius:20px; font-weight:600; ${statusStyle[row.status] ?? ''}`}>
-                      {row.status}
+    {orders && orders.length > 0 ? (
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        {orders.map((o) => {
+          const items = (o as any).order_items ?? [];
+          const buyer = (o as any).users ?? {};
+          return (
+            <div class="card order-card" data-order-id={o.id}>
+              <button type="button" class="order-header">
+                <div style="display:flex; flex-direction:column; gap:2px; text-align:left;">
+                  <div style="font-size:12px; font-family:monospace; color:var(--text-secondary);">
+                    #{o.id.slice(0, 8)}
+                  </div>
+                  <div style="font-size:13px; font-weight:500;">{buyer.name ?? '-'} · {buyer.email ?? '-'}</div>
+                </div>
+                <div style="display:flex; gap:20px; align-items:center;">
+                  <div style="text-align:right;">
+                    <div style="font-size:11px; color:var(--text-secondary);">Total</div>
+                    <div style="font-size:14px; font-weight:700;">{idrFormat(o.total_price)}</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div style="font-size:11px; color:var(--text-secondary);">{items.length} item</div>
+                    <span style={`font-size:11px; padding:3px 10px; border-radius:999px; font-weight:600; ${orderStatusStyle[o.status]}`}>
+                      {o.status}
                     </span>
-                  </td>
-                  <td style="padding:14px 20px; font-size:13px; color:var(--text-secondary);">{date}</td>
-                  <td style="padding:14px 20px; font-size:13px;">
-                    {row.status === 'pending' ? (
-                      <button class="verify-order-btn" data-order-id={row.id} style="font-size:12px; padding:6px 10px; border-radius:8px; border:none; cursor:pointer; background:#22c55e; color:#0f172a; font-weight:600;">
-                        Verifikasi & Kirim Akun
-                      </button>
-                    ) : (
-                      <span style="font-size:12px; color:var(--text-secondary);">-</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      ) : (
-        <div style="text-align:center; padding:60px; color:var(--text-secondary);">Belum ada order.</div>
-      )}
-    </div>
+                  </div>
+                  <div style="font-size:12px; color:var(--text-secondary);">{new Date(o.created_at).toLocaleDateString('id-ID')}</div>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform 0.2s;" class="chev"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+              </button>
+
+              <div class="order-body">
+                {o.buyer_note && (
+                  <div style="padding:10px 14px; background:var(--bg-secondary); border-radius:10px; font-size:12px; margin-bottom:12px;">
+                    <strong>Catatan buyer:</strong> {o.buyer_note}
+                  </div>
+                )}
+
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                  {items.map((item: any) => {
+                    const snap = item.product_snapshot ?? {};
+                    const niche = snap.niche;
+                    const buyerInput = item.buyer_input ?? {};
+                    const canMarkDone = item.status === 'processing' && niche !== 'premium_apps';
+                    const canCancel = item.status === 'pending' || item.status === 'processing';
+                    return (
+                      <div class="item-row" data-item-id={item.id}>
+                        <div style="flex:1;">
+                          <div style="display:flex; gap:8px; align-items:center; margin-bottom:4px;">
+                            <span style="font-size:10px; padding:2px 8px; border-radius:999px; background:rgba(166,255,0,0.12); color:var(--accent); font-weight:600; text-transform:uppercase;">
+                              {NICHE_LABEL[niche] ?? niche}
+                            </span>
+                            <span style={`font-size:10px; padding:2px 8px; border-radius:999px; font-weight:600; ${itemStatusStyle[item.status]}`}>
+                              {item.status}
+                            </span>
+                          </div>
+                          <div style="font-size:13px; font-weight:500;">{snap.product_title} — {snap.variant_name}</div>
+                          <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">
+                            {item.quantity}x @ {idrFormat(item.unit_price)} = <strong>{idrFormat(item.line_total)}</strong>
+                          </div>
+                          {Object.keys(buyerInput).length > 0 && (
+                            <div style="margin-top:6px; padding:8px 10px; background:var(--bg-secondary); border-radius:8px; font-size:11px; font-family:monospace;">
+                              {Object.entries(buyerInput).map(([k, v]) => (
+                                <div>{k}: <span style="color:var(--text-primary);">{String(v)}</span></div>
+                              ))}
+                            </div>
+                          )}
+                          {item.fulfillment_note && (
+                            <div style="margin-top:6px; padding:8px 10px; background:rgba(34,197,94,0.05); border-radius:8px; font-size:11px;">
+                              ✅ {item.fulfillment_note}
+                            </div>
+                          )}
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+                          {canMarkDone && (
+                            <button type="button" class="complete-btn btn-accent" style="font-size:11px; padding:6px 12px;">Mark Done</button>
+                          )}
+                          {canCancel && (
+                            <button type="button" class="cancel-btn btn-outline" style="font-size:11px; padding:6px 12px; color:#ef4444;">Cancel Item</button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {o.status === 'pending' && (
+                  <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border-color);">
+                    <button type="button" class="mark-paid-btn btn-accent" style="font-size:13px; width:100%;">Mark Paid & Kirim Credentials (Premium Apps)</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    ) : (
+      <div class="card" style="padding:60px; text-align:center; color:var(--text-secondary);">Belum ada order.</div>
+    )}
   </div>
 </DashboardLayout>
 
 <style>
-  .table-row:hover { background: var(--bg-secondary); }
-  .table-row:last-child { border-bottom: none; }
+  .order-card { padding: 0; overflow: hidden; }
+  .order-header {
+    width: 100%; padding: 18px 22px;
+    border: none; background: transparent;
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; color: var(--text-primary);
+  }
+  .order-header:hover { background: var(--bg-secondary); }
+  .order-card[data-open="true"] .chev { transform: rotate(180deg); }
+  .order-body {
+    display: none;
+    padding: 18px 22px;
+    border-top: 1px solid var(--border-color);
+  }
+  .order-card[data-open="true"] .order-body { display: block; }
+
+  .item-row {
+    display: flex; gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--card-bg);
+  }
 </style>
 
 <script>
-  const buttons = document.querySelectorAll<HTMLButtonElement>('.verify-order-btn');
+  // Expand/collapse
+  document.querySelectorAll<HTMLButtonElement>('.order-header').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest<HTMLElement>('.order-card')!;
+      const open = card.getAttribute('data-open') === 'true';
+      card.setAttribute('data-open', open ? 'false' : 'true');
+    });
+  });
 
-  buttons.forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const orderId = btn.dataset.orderId;
+  // Mark paid
+  document.querySelectorAll<HTMLButtonElement>('.mark-paid-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const card = btn.closest<HTMLElement>('.order-card')!;
+      const orderId = card.dataset.orderId;
       if (!orderId) return;
-
-      if (!confirm('Tandai order ini sebagai LUNAS dan kirim detail akun ke email buyer?')) {
-        return;
-      }
+      if (!confirm('Tandai order ini LUNAS? Credentials akan dikirim otomatis untuk Premium Apps.')) return;
 
       btn.disabled = true;
       btn.textContent = 'Memproses...';
-
       try {
-        const res = await fetch('/api/admin/orders/verify', {
+        const res = await fetch(`/api/admin/orders/${orderId}/mark-paid`, { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Gagal');
+        alert(`Order ditandai ${data.orderStatus}. Email: ${(data.emails ?? []).map((x: any) => x.success ? 'ok' : 'FAIL').join(', ') || '(tidak ada premium)'}`);
+        window.location.reload();
+      } catch (err: any) {
+        alert(err.message);
+        btn.disabled = false;
+        btn.textContent = 'Mark Paid & Kirim Credentials (Premium Apps)';
+      }
+    });
+  });
+
+  // Complete item (SocMed/Jasa)
+  document.querySelectorAll<HTMLButtonElement>('.complete-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const row = btn.closest<HTMLElement>('.item-row')!;
+      const itemId = row.dataset.itemId;
+      const note = prompt('Catatan fulfillment (opsional)', '') ?? '';
+      if (!itemId) return;
+      try {
+        const res = await fetch(`/api/admin/order-items/${itemId}/complete`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId }),
+          body: JSON.stringify({ fulfillmentNote: note }),
         });
-
-        const result = await res.json();
-        if (!res.ok) {
-          throw new Error(result.error || 'Gagal memverifikasi order');
-        }
-
-        // Update status di UI
-        const row = btn.closest('tr');
-        const statusChip = row?.querySelector('td:nth-child(4) span') as HTMLElement | null;
-        if (statusChip) {
-          statusChip.textContent = 'paid';
-          statusChip.style.background = 'rgba(34,197,94,0.1)';
-          statusChip.style.color = '#22c55e';
-        }
-
-        btn.textContent = 'Sudah Diverifikasi';
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Gagal');
+        window.location.reload();
       } catch (err: any) {
-        alert(err.message || 'Terjadi kesalahan');
-        btn.disabled = false;
-        btn.textContent = 'Verifikasi & Kirim Akun';
+        alert(err.message);
+      }
+    });
+  });
+
+  // Cancel item
+  document.querySelectorAll<HTMLButtonElement>('.cancel-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const row = btn.closest<HTMLElement>('.item-row')!;
+      const itemId = row.dataset.itemId;
+      if (!itemId || !confirm('Cancel item ini? Credential (jika ada) akan dilepas kembali.')) return;
+      try {
+        const res = await fetch(`/api/admin/order-items/${itemId}/cancel`, { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Gagal');
+        window.location.reload();
+      } catch (err: any) {
+        alert(err.message);
       }
     });
   });
