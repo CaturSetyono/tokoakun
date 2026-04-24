@@ -1,5 +1,5 @@
 ---
-import { LayoutDashboard, Folder, CheckCircle, ShoppingCart, CircleDollarSign, Settings, Home, Package, Users, LineChart, Hash, LogOut } from 'lucide-astro';
+import { LayoutDashboard, Package, ShoppingBag, Users, UserPlus, LogOut } from 'lucide-astro';
 
 interface Props {
   role: 'admin' | 'buyer';
@@ -10,17 +10,14 @@ const { role, activeMenu = '' } = Astro.props;
 
 const menus: Record<string, { label: string; href: string; icon: any }[]> = {
   buyer: [
-    // Buyer dashboard sudah dihapus; hanya akses ke shop
-    { label: 'Browse Shop', href: '/shop', icon: ShoppingCart },
+    { label: 'Browse Shop', href: '/shop/premium-apps', icon: ShoppingBag },
   ],
   admin: [
-    { label: 'Dashboard', href: '/dashboard/admin', icon: LayoutDashboard },
-    { label: 'User Management', href: '/dashboard/admin/users', icon: Users },
-    { label: 'Orders', href: '/dashboard/admin/orders', icon: Package },
-    // Fitur yang sebelumnya di dashboard seller dipindah ke admin
-    { label: 'Manage Accounts', href: '/dashboard/seller/accounts', icon: Folder },
-    { label: 'Sold Accounts', href: '/dashboard/seller/sold', icon: CheckCircle },
-    { label: 'Revenue', href: '/dashboard/seller/revenue', icon: CircleDollarSign },
+    { label: 'Overview', href: '/dashboard/admin', icon: LayoutDashboard },
+    { label: 'Products', href: '/dashboard/admin/products', icon: Package },
+    { label: 'Orders', href: '/dashboard/admin/orders', icon: ShoppingBag },
+    { label: 'Reseller Applications', href: '/dashboard/admin/reseller-applications', icon: UserPlus },
+    { label: 'Users', href: '/dashboard/admin/users', icon: Users },
   ],
 };
 
@@ -28,7 +25,6 @@ const items = menus[role] ?? menus.admin;
 ---
 
 <aside id="sidebar">
-  <!-- Logo -->
   <div style="padding:24px 20px 32px;">
     <a href="/" style="font-size:18px; font-weight:700; text-decoration:none;">
       <span class="gradient-text">TOKO</span><span style="color:var(--text-primary);">AKUN</span>
@@ -38,7 +34,6 @@ const items = menus[role] ?? menus.admin;
     </div>
   </div>
 
-  <!-- Menu items -->
   <nav style="flex:1; padding:0 12px;">
     {items.map(item => {
       const Icon = item.icon;
@@ -54,7 +49,6 @@ const items = menus[role] ?? menus.admin;
     })}
   </nav>
 
-  <!-- Logout -->
   <div style="padding:16px 12px;">
     <button id="sidebar-logout" class="sidebar-link" style="width:100%; border:none; cursor:pointer; background:none; text-align:left;">
       <span style="display:flex; align-items:center;"><LogOut size={18} /></span>
@@ -103,5 +97,4 @@ const items = menus[role] ?? menus.admin;
     await fetch('/api/auth/logout', { method: 'POST' });
     window.location.href = '/login';
   });
-
 </script>
