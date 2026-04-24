@@ -1,0 +1,132 @@
+---
+import { idrFormat, NICHE_LABEL, NICHE_SLUG } from '../lib/cart';
+import type { ProductNiche } from '../lib/database.types';
+
+interface Props {
+  slug: string;
+  niche: ProductNiche;
+  title: string;
+  thumbnailUrl?: string | null;
+  description?: string | null;
+  minPrice: number;
+  variantCount: number;
+  featured?: boolean;
+}
+
+const { slug, niche, title, thumbnailUrl, description, minPrice, variantCount, featured } = Astro.props;
+
+const NICHE_EMOJI: Record<string, string> = {
+  social_media: '📱',
+  premium_apps: '🎬',
+  jasa: '🛠️',
+};
+---
+
+<a href={`/shop/${NICHE_SLUG[niche]}/${slug}`} class="product-card card">
+  <div class="thumb">
+    {thumbnailUrl
+      ? <img src={thumbnailUrl} alt={title} loading="lazy" />
+      : <div class="thumb-placeholder">{NICHE_EMOJI[niche] ?? '📦'}</div>
+    }
+    {featured && <span class="featured-badge">Featured</span>}
+  </div>
+
+  <div class="card-body">
+    <span class="niche-badge">{NICHE_LABEL[niche]}</span>
+    <h3 class="title">{title}</h3>
+    {description && <p class="desc">{description}</p>}
+
+    <div class="footer">
+      <div>
+        <div class="price-label">Mulai dari</div>
+        <div class="price">{idrFormat(minPrice)}</div>
+      </div>
+      <div class="variant-count">{variantCount} paket</div>
+    </div>
+  </div>
+</a>
+
+<style>
+  .product-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+  }
+  .thumb {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    background: var(--bg-secondary);
+    overflow: hidden;
+    position: relative;
+  }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .thumb-placeholder {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 46px;
+  }
+  .featured-badge {
+    position: absolute;
+    top: 10px; left: 10px;
+    background: var(--accent);
+    color: #111;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .card-body { padding: 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .niche-badge {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--accent);
+    background: rgba(166, 255, 0, 0.12);
+    padding: 3px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    align-self: flex-start;
+  }
+  .title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+    line-height: 1.4;
+  }
+  .desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .footer {
+    margin-top: auto;
+    padding-top: 10px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .price-label { font-size: 10px; color: var(--text-secondary); }
+  .price { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+  .variant-count {
+    font-size: 11px;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+</style>
