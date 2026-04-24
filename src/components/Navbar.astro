@@ -1,25 +1,66 @@
 ---
-// Navbar component
+import { getCartCount } from '../lib/cart';
+
 const { userId, userRole, userName, userEmail } = Astro.locals;
+
+const cartCount = userId ? await getCartCount(userId) : 0;
 ---
 
 <nav id="navbar">
   <div class="container" style="display:flex; align-items:center; justify-content:space-between; height:64px;">
-    <!-- Logo -->
     <a href="/" style="font-size:22px; font-weight:700; text-decoration:none;">
       <span class="gradient-text">TOKO</span><span style="color:var(--text-primary);">AKUN</span>
     </a>
 
-    <!-- Nav links (center) -->
-    <ul style="display:flex; gap:32px; list-style:none; margin:0; padding:0;" id="nav-links">
+    <ul style="display:flex; gap:28px; list-style:none; margin:0; padding:0;" id="nav-links">
       <li><a href="/" class="nav-link">Home</a></li>
-      <li><a href="/about" class="nav-link">About Us</a></li>
-      <li><a href="/shop" class="nav-link">Shop</a></li>
+      <li class="shop-menu-wrapper">
+        <button id="shop-menu-toggle" class="nav-link shop-menu-button" aria-haspopup="true" aria-expanded="false">
+          Shop
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div id="shop-menu" class="dropdown-menu" data-open="false">
+          <a href="/shop/social-media" class="dropdown-item">
+            <span class="dropdown-icon">📱</span>
+            <div>
+              <div class="dropdown-item-title">Social Media Solution</div>
+              <div class="dropdown-item-desc">Followers, likes, views</div>
+            </div>
+          </a>
+          <a href="/shop/premium-apps" class="dropdown-item">
+            <span class="dropdown-icon">🎬</span>
+            <div>
+              <div class="dropdown-item-title">Premium Apps</div>
+              <div class="dropdown-item-desc">Netflix, Spotify, dll.</div>
+            </div>
+          </a>
+          <a href="/shop/jasa" class="dropdown-item">
+            <span class="dropdown-icon">🛠️</span>
+            <div>
+              <div class="dropdown-item-title">Jasa</div>
+              <div class="dropdown-item-desc">Desain, dev, editing</div>
+            </div>
+          </a>
+          <div class="dropdown-divider"></div>
+          <a href="/reseller" class="dropdown-item">
+            <span class="dropdown-icon">🤝</span>
+            <div>
+              <div class="dropdown-item-title">Join Reseller</div>
+              <div class="dropdown-item-desc">Daftar jadi mitra</div>
+            </div>
+          </a>
+        </div>
+      </li>
+      <li><a href="/about" class="nav-link">About</a></li>
       <li><a href="/contact" class="nav-link">Contact</a></li>
     </ul>
 
-    <!-- Right: theme toggle + auth -->
     <div style="display:flex; align-items:center; gap:12px;">
+      <a href="/cart" class="cart-button" aria-label="Keranjang">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+        {cartCount > 0 && <span class="cart-badge">{cartCount}</span>}
+      </a>
+
       <button id="theme-toggle" aria-label="Toggle theme" style="background:none; border:1px solid var(--border-color); border-radius:8px; width:36px; height:36px; cursor:pointer; color:var(--text-primary); display:flex; align-items:center; justify-content:center;">
         <span id="theme-icon" style="display:flex; align-items:center; justify-content:center;"></span>
       </button>
@@ -40,15 +81,17 @@ const { userId, userRole, userName, userEmail } = Astro.locals;
                 </span>
               </button>
               <div id="user-menu" class="user-menu" data-open="false">
+                <div class="user-menu-header">
+                  <div style="font-weight:600;">{userName}</div>
+                  <div style="font-size:11px; color:var(--text-secondary);">{userEmail}</div>
+                </div>
+                <a href="/cart" class="user-menu-item">Keranjang</a>
                 <button id="logout-btn" class="user-menu-item user-menu-logout" type="button">Logout</button>
               </div>
             </div>
           ) : (
             <>
-              <a href={
-                userRole === 'admin' ? '/dashboard/admin' : 
-                '/shop'
-              } class="btn-outline" style="padding:8px 16px; font-size:13px; margin-right:8px;">Dashboard</a>
+              <a href="/dashboard/admin" class="btn-outline" style="padding:8px 16px; font-size:13px; margin-right:8px;">Dashboard</a>
               <button id="logout-btn" class="btn-accent" style="padding:8px 16px; font-size:13px;">Logout</button>
             </>
           )
@@ -76,137 +119,180 @@ const { userId, userRole, userName, userEmail } = Astro.locals;
     font-size: 14px;
     font-weight: 500;
     transition: color 0.2s;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
   }
-  .nav-link:hover {
-    color: var(--accent);
+  .nav-link:hover { color: var(--accent); }
+
+  .shop-menu-wrapper { position: relative; }
+  .shop-menu-button { display: inline-flex; align-items: center; }
+
+  .dropdown-menu {
+    position: absolute;
+    top: 32px;
+    left: -16px;
+    min-width: 260px;
+    padding: 8px;
+    border-radius: 12px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.22);
+    display: none;
+    z-index: 200;
+  }
+  .dropdown-menu[data-open="true"] { display: block; }
+
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: background 0.15s;
+  }
+  .dropdown-item:hover { background: var(--bg-secondary); }
+  .dropdown-icon { font-size: 20px; }
+  .dropdown-item-title { font-size: 13px; font-weight: 600; }
+  .dropdown-item-desc { font-size: 11px; color: var(--text-secondary); }
+
+  .dropdown-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 6px 4px;
   }
 
-  .user-menu-wrapper {
+  .cart-button {
     position: relative;
-  }
-
-  .user-avatar-button {
-    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 36px;
     height: 36px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    text-decoration: none;
+  }
+  .cart-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: var(--accent);
+    color: #111;
+    border-radius: 999px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: 10px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .user-menu-wrapper { position: relative; }
+  .user-avatar-button {
+    border-radius: 999px; width: 36px; height: 36px;
     border: 1px solid var(--border-color);
     background: var(--bg-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0; cursor: pointer;
   }
-
   .avatar-circle {
-    width: 28px;
-    height: 28px;
-    border-radius: 999px;
-    background: var(--accent);
-    color: #111111;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: 600;
+    width: 28px; height: 28px; border-radius: 999px;
+    background: var(--accent); color: #111111;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600;
   }
-
   .user-menu {
-    position: absolute;
-    top: 44px;
-    right: 0;
-    min-width: 150px;
-    padding: 6px;
-    border-radius: 10px;
+    position: absolute; top: 44px; right: 0; min-width: 220px;
+    padding: 8px; border-radius: 10px;
     background: var(--card-bg);
     box-shadow: 0 10px 30px rgba(0,0,0,0.18);
     border: 1px solid var(--border-color);
-    display: none;
-    z-index: 110;
+    display: none; z-index: 110;
   }
-
-  .user-menu[data-open="true"] {
-    display: block;
-  }
-
-  .user-menu-item {
-    display: block;
-    width: 100%;
-    padding: 8px 10px;
-    border-radius: 8px;
+  .user-menu[data-open="true"] { display: block; }
+  .user-menu-header {
+    padding: 8px 10px 10px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 6px;
     font-size: 13px;
-    color: var(--text-primary);
-    text-decoration: none;
-    text-align: left;
-    background: transparent;
-    border: none;
-    cursor: pointer;
   }
-
-  .user-menu-item:hover {
-    background: var(--bg-secondary);
+  .user-menu-item {
+    display: block; width: 100%;
+    padding: 8px 10px; border-radius: 8px;
+    font-size: 13px; color: var(--text-primary);
+    text-decoration: none; text-align: left;
+    background: transparent; border: none; cursor: pointer;
   }
-
-  .user-menu-logout {
-    color: #ef4444;
-  }
+  .user-menu-item:hover { background: var(--bg-secondary); }
+  .user-menu-logout { color: #ef4444; }
 </style>
 
 <script>
-  // Theme toggle
   const toggle = document.getElementById('theme-toggle')!;
   const icon = document.getElementById('theme-icon')!;
 
-  const sunIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`;
-  const moonIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-moon"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`;
+  const sunIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`;
+  const moonIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`;
 
   function updateIcon() {
     icon.innerHTML = document.documentElement.classList.contains('dark') ? sunIcon : moonIcon;
   }
   updateIcon();
-
   toggle.addEventListener('click', () => {
     document.documentElement.classList.toggle('dark');
     localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
     updateIcon();
   });
 
-  // Highlight active nav link
   const links = document.querySelectorAll<HTMLAnchorElement>('.nav-link');
   links.forEach(link => {
-    if (link.href === window.location.href) {
+    if (link instanceof HTMLAnchorElement && link.href === window.location.href) {
       link.style.color = 'var(--accent)';
     }
   });
 
-  // Buyer user menu toggle
-  const userMenu = document.getElementById('user-menu');
-  const userMenuToggle = document.getElementById('user-menu-toggle');
-
-  if (userMenu && userMenuToggle) {
-    const toggleMenu = (open?: boolean) => {
-      const isOpen = open ?? userMenu.getAttribute('data-open') !== 'true';
-      userMenu.setAttribute('data-open', isOpen ? 'true' : 'false');
-      userMenuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  // Shop dropdown
+  const shopMenu = document.getElementById('shop-menu');
+  const shopToggle = document.getElementById('shop-menu-toggle');
+  if (shopMenu && shopToggle) {
+    const open = (isOpen?: boolean) => {
+      const target = isOpen ?? shopMenu.getAttribute('data-open') !== 'true';
+      shopMenu.setAttribute('data-open', target ? 'true' : 'false');
+      shopToggle.setAttribute('aria-expanded', target ? 'true' : 'false');
     };
-
-    userMenuToggle.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleMenu();
-    });
-
+    shopToggle.addEventListener('click', (e) => { e.stopPropagation(); open(); });
     document.addEventListener('click', (e) => {
-      if (!userMenu.contains(e.target as Node) && e.target !== userMenuToggle) {
-        toggleMenu(false);
-      }
+      if (!shopMenu.contains(e.target as Node) && e.target !== shopToggle) open(false);
     });
   }
 
-  // Handle Logout
+  // User menu
+  const userMenu = document.getElementById('user-menu');
+  const userMenuToggle = document.getElementById('user-menu-toggle');
+  if (userMenu && userMenuToggle) {
+    const open = (isOpen?: boolean) => {
+      const target = isOpen ?? userMenu.getAttribute('data-open') !== 'true';
+      userMenu.setAttribute('data-open', target ? 'true' : 'false');
+      userMenuToggle.setAttribute('aria-expanded', target ? 'true' : 'false');
+    };
+    userMenuToggle.addEventListener('click', (e) => { e.stopPropagation(); open(); });
+    document.addEventListener('click', (e) => {
+      if (!userMenu.contains(e.target as Node) && e.target !== userMenuToggle) open(false);
+    });
+  }
+
   document.getElementById('logout-btn')?.addEventListener('click', async () => {
     const response = await fetch('/api/auth/logout', { method: 'POST' });
-    if (response.ok) {
-      window.location.href = '/';
-    }
+    if (response.ok) window.location.href = '/';
   });
 </script>
