@@ -1,0 +1,239 @@
+---
+import DashboardLayout from '../../../../../layouts/DashboardLayout.astro';
+import { supabaseAdmin } from '../../../../../lib/supabaseAdmin';
+import { idrFormat, NICHE_LABEL } from '../../../../../lib/cart';
+
+const { id } = Astro.params;
+
+const { data: product } = await supabaseAdmin
+  .from('products')
+  .select('id, niche, title, slug')
+  .eq('id', id!)
+  .maybeSingle();
+
+if (!product) return Astro.redirect('/dashboard/admin/products');
+
+const { data: variants } = await supabaseAdmin
+  .from('product_variants')
+  .select('id, name, price, sort_order, is_unlimited_stock, stock_cached, status')
+  .eq('product_id', product.id)
+  .order('sort_order', { ascending: true });
+
+const isPremium = product.niche === 'premium_apps';
+---
+
+<DashboardLayout title={`Variants: ${product.title}`} role="admin" activeMenu="Products">
+  <div style="max-width:960px;">
+    <div style="margin-bottom:20px;">
+      <a href={`/dashboard/admin/products/${product.id}/edit`} style="font-size:12px; color:var(--text-secondary); text-decoration:none;">← Kembali ke Edit Produk</a>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:24px;">
+      <div>
+        <h1 style="font-size:24px; font-weight:700; margin:0 0 4px;">{product.title}</h1>
+        <p style="color:var(--text-secondary); font-size:13px; margin:0;">{NICHE_LABEL[product.niche]} · kelola paket & harga</p>
+      </div>
+      <button id="add-variant" class="btn-accent">+ Tambah Variant</button>
+    </div>
+
+    <div id="variants-list" class="card" style="padding:0; overflow:hidden;">
+      {variants && variants.length > 0 ? (
+        variants.map((v) => (
+          <div class="variant-row" data-variant-id={v.id}>
+            <div style="flex:1;">
+              <div style="display:flex; gap:10px; align-items:center; margin-bottom:4px;">
+                <span style="font-weight:600; font-size:14px;">{v.name}</span>
+                <span style={`font-size:10px; padding:2px 8px; border-radius:999px; font-weight:600; ${v.status==='active' ? 'background:rgba(34,197,94,0.1); color:#22c55e;' : 'background:rgba(156,163,175,0.1); color:#9ca3af;'}`}>
+                  {v.status}
+                </span>
+              </div>
+              <div style="display:flex; gap:16px; font-size:12px; color:var(--text-secondary);">
+                <span>{idrFormat(v.price)}</span>
+                <span>{v.is_unlimited_stock ? 'Stok unlimited' : `Stok: ${v.stock_cached}`}</span>
+                <span>Order: {v.sort_order}</span>
+              </div>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button type="button" class="edit-variant btn-outline" style="font-size:11px; padding:5px 10px;">Edit</button>
+              <button type="button" class="delete-variant btn-outline" style="font-size:11px; padding:5px 10px; color:#ef4444;">Archive</button>
+            </div>
+          </div>
+        ))
+      ) : (
+        <div style="text-align:center; padding:60px; color:var(--text-secondary);">Belum ada variant. Klik tombol di atas untuk menambah.</div>
+      )}
+    </div>
+
+    {isPremium && (
+      <div style="margin-top:24px; padding:16px; border-radius:12px; background:rgba(166,255,0,0.08); border:1px solid var(--accent); font-size:13px; color:var(--text-primary);">
+        💡 <strong>Premium Apps:</strong> Stok diambil dari jumlah kredensial yang tersedia. Tambahkan kredensial per variant di halaman <a href={`/dashboard/admin/products/${product.id}/credentials`} style="color:var(--accent); font-weight:600;">Credentials</a>.
+      </div>
+    )}
+  </div>
+
+  <!-- Modal form -->
+  <div id="variant-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-card card">
+      <h3 id="modal-title" style="font-size:16px; font-weight:600; margin:0 0 20px;">Tambah Variant</h3>
+      <form id="variant-form" style="display:flex; flex-direction:column; gap:14px;">
+        <input type="hidden" id="v-id" />
+        <div>
+          <label class="label">Nama Paket <span style="color:#ef4444;">*</span></label>
+          <input type="text" id="v-name" required class="input" maxlength="120" placeholder={isPremium ? 'Netflix 1 Bulan' : '1000 Followers'} />
+        </div>
+        <div style="display:flex; gap:12px;">
+          <div style="flex:2;">
+            <label class="label">Harga (IDR) <span style="color:#ef4444;">*</span></label>
+            <input type="number" id="v-price" required min="0" step="1" class="input" />
+          </div>
+          <div style="flex:1;">
+            <label class="label">Urutan</label>
+            <input type="number" id="v-order" value="0" min="0" class="input" />
+          </div>
+        </div>
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px;">
+          <input type="checkbox" id="v-unlimited" checked={!isPremium} />
+          Stok unlimited (tidak tracked)
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px;">
+          Status
+          <select id="v-status" class="input" style="width:auto;">
+            <option value="active">Active</option>
+            <option value="archived">Archived</option>
+          </select>
+        </label>
+        <div id="v-error" style="display:none; padding:10px; border-radius:8px; background:rgba(239,68,68,0.1); color:#ef4444; font-size:12px;"></div>
+        <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;">
+          <button type="button" id="v-cancel" class="btn-outline">Batal</button>
+          <button type="submit" class="btn-accent">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</DashboardLayout>
+
+<style>
+  .label { font-size:12px; font-weight:500; display:block; margin-bottom:6px; color:var(--text-secondary); }
+  .input {
+    width:100%; padding:10px 14px;
+    border:1px solid var(--border-color); border-radius:10px;
+    background:var(--bg-secondary); color:var(--text-primary);
+    font-family:inherit; font-size:13px;
+  }
+  .input:focus { outline:none; border-color:var(--accent); }
+  .variant-row {
+    display:flex; align-items:center; gap:12px;
+    padding:14px 20px;
+    border-bottom:1px solid var(--border-color);
+  }
+  .variant-row:last-child { border-bottom: none; }
+
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200;
+  }
+  .modal-card {
+    width: 100%; max-width: 480px;
+    padding: 24px;
+    background: var(--card-bg);
+  }
+</style>
+
+<script define:vars={{ productId: product.id, isPremium }}>
+  const modal = document.getElementById('variant-modal');
+  const form = document.getElementById('variant-form');
+  const title = document.getElementById('modal-title');
+  const errorBox = document.getElementById('v-error');
+
+  function openModal(variant) {
+    errorBox.style.display = 'none';
+    if (variant) {
+      title.textContent = 'Edit Variant';
+      document.getElementById('v-id').value = variant.id;
+      document.getElementById('v-name').value = variant.name;
+      document.getElementById('v-price').value = variant.price;
+      document.getElementById('v-order').value = variant.sort_order;
+      document.getElementById('v-unlimited').checked = variant.is_unlimited_stock;
+      document.getElementById('v-status').value = variant.status;
+    } else {
+      title.textContent = 'Tambah Variant';
+      form.reset();
+      document.getElementById('v-id').value = '';
+      document.getElementById('v-unlimited').checked = !isPremium;
+      document.getElementById('v-order').value = '0';
+    }
+    modal.style.display = 'flex';
+  }
+
+  document.getElementById('add-variant').addEventListener('click', () => openModal(null));
+  document.getElementById('v-cancel').addEventListener('click', () => { modal.style.display = 'none'; });
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+
+  document.querySelectorAll('.edit-variant').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      const row = e.currentTarget.closest('.variant-row');
+      const id = row.dataset.variantId;
+      const res = await fetch('/api/admin/products/' + productId).catch(() => null);
+      // fallback: extract from DOM
+      const name = row.querySelector('span[style*="font-weight:600"]').textContent;
+      const statusEl = row.querySelector('span[style*="border-radius:999px"]');
+      const priceStr = row.querySelectorAll('span')[2].textContent;
+      const stockStr = row.querySelectorAll('span')[3].textContent;
+      const orderStr = row.querySelectorAll('span')[4].textContent;
+      openModal({
+        id,
+        name,
+        price: Number(priceStr.replace(/[^0-9]/g, '')),
+        sort_order: Number(orderStr.replace(/[^0-9]/g, '')),
+        is_unlimited_stock: stockStr.includes('unlimited'),
+        status: statusEl.textContent.trim(),
+      });
+    });
+  });
+
+  document.querySelectorAll('.delete-variant').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      const row = e.currentTarget.closest('.variant-row');
+      const id = row.dataset.variantId;
+      if (!confirm('Archive variant ini?')) return;
+      const res = await fetch(`/api/admin/variants/${id}`, { method: 'DELETE' });
+      if (res.ok) window.location.reload();
+      else {
+        const data = await res.json();
+        alert(data.error || 'Gagal');
+      }
+    });
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorBox.style.display = 'none';
+
+    const id = document.getElementById('v-id').value;
+    const payload = {
+      productId,
+      name: document.getElementById('v-name').value,
+      price: Number(document.getElementById('v-price').value),
+      sortOrder: Number(document.getElementById('v-order').value),
+      isUnlimitedStock: document.getElementById('v-unlimited').checked,
+      status: document.getElementById('v-status').value,
+    };
+
+    try {
+      const url = id ? `/api/admin/variants/${id}` : '/api/admin/variants';
+      const method = id ? 'PATCH' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal menyimpan');
+      window.location.reload();
+    } catch (err) {
+      errorBox.textContent = err.message;
+      errorBox.style.display = 'block';
+    }
+  });
+</script>

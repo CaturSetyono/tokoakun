@@ -1,0 +1,119 @@
+---
+import DashboardLayout from '../../../../layouts/DashboardLayout.astro';
+import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
+import { idrFormat, NICHE_LABEL } from '../../../../lib/cart';
+
+const selectedNiche = Astro.url.searchParams.get('niche');
+
+let query = supabaseAdmin
+  .from('products')
+  .select('id, niche, slug, title, status, featured, thumbnail_url, created_at, product_variants(price, status)')
+  .order('created_at', { ascending: false });
+
+if (selectedNiche && ['social_media','premium_apps','jasa'].includes(selectedNiche)) {
+  query = query.eq('niche', selectedNiche as any);
+}
+
+const { data: products } = await query;
+
+const statusStyle: Record<string, string> = {
+  active: 'background:rgba(34,197,94,0.1); color:#22c55e;',
+  draft: 'background:rgba(234,179,8,0.1); color:#eab308;',
+  archived: 'background:rgba(156,163,175,0.1); color:#9ca3af;',
+};
+---
+
+<DashboardLayout title="Produk" role="admin" activeMenu="Products">
+  <div>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:28px;">
+      <div>
+        <h1 style="font-size:24px; font-weight:700; margin:0 0 4px;">Produk</h1>
+        <p style="color:var(--text-secondary); font-size:14px; margin:0;">{products?.length ?? 0} produk</p>
+      </div>
+      <a href="/dashboard/admin/products/new" class="btn-accent">+ Tambah Produk</a>
+    </div>
+
+    <!-- Filter chips -->
+    <div style="display:flex; gap:8px; margin-bottom:20px;">
+      <a href="/dashboard/admin/products" class={`chip ${!selectedNiche ? 'active' : ''}`}>Semua</a>
+      <a href="/dashboard/admin/products?niche=social_media" class={`chip ${selectedNiche==='social_media' ? 'active' : ''}`}>Social Media</a>
+      <a href="/dashboard/admin/products?niche=premium_apps" class={`chip ${selectedNiche==='premium_apps' ? 'active' : ''}`}>Premium Apps</a>
+      <a href="/dashboard/admin/products?niche=jasa" class={`chip ${selectedNiche==='jasa' ? 'active' : ''}`}>Jasa</a>
+    </div>
+
+    <div class="card" style="overflow:hidden;">
+      {products && products.length > 0 ? (
+        <table style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border-color); background:var(--bg-secondary);">
+              <th class="th">Produk</th>
+              <th class="th">Niche</th>
+              <th class="th">Harga Mulai</th>
+              <th class="th">Variant</th>
+              <th class="th">Status</th>
+              <th class="th">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {products.map((p) => {
+              const variants = (p as any).product_variants ?? [];
+              const activeVariants = variants.filter((v: any) => v.status === 'active');
+              const minPrice = activeVariants.length > 0 ? Math.min(...activeVariants.map((v: any) => Number(v.price))) : 0;
+              return (
+                <tr class="row">
+                  <td class="td">
+                    <div style="display:flex; gap:10px; align-items:center;">
+                      {p.thumbnail_url ? (
+                        <img src={p.thumbnail_url} alt={p.title} style="width:40px; height:40px; border-radius:8px; object-fit:cover;"/>
+                      ) : (
+                        <div style="width:40px; height:40px; border-radius:8px; background:var(--bg-secondary); display:flex; align-items:center; justify-content:center; font-size:16px;">📦</div>
+                      )}
+                      <div>
+                        <div style="font-weight:500; font-size:13px;">{p.title}</div>
+                        <div style="font-size:11px; color:var(--text-secondary); font-family:monospace;">{p.slug}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="td" style="font-size:12px;">{NICHE_LABEL[p.niche] ?? p.niche}</td>
+                  <td class="td" style="font-size:13px; font-weight:600;">{activeVariants.length > 0 ? idrFormat(minPrice) : '-'}</td>
+                  <td class="td" style="font-size:13px;">{variants.length} ({activeVariants.length} aktif)</td>
+                  <td class="td">
+                    <span style={`font-size:11px; padding:3px 10px; border-radius:20px; font-weight:600; ${statusStyle[p.status] ?? ''}`}>
+                      {p.status}
+                    </span>
+                  </td>
+                  <td class="td">
+                    <div style="display:flex; gap:6px;">
+                      <a href={`/dashboard/admin/products/${p.id}/edit`} class="btn-outline" style="font-size:11px; padding:5px 10px;">Edit</a>
+                      <a href={`/dashboard/admin/products/${p.id}/variants`} class="btn-outline" style="font-size:11px; padding:5px 10px;">Variants</a>
+                      {p.niche === 'premium_apps' && (
+                        <a href={`/dashboard/admin/products/${p.id}/credentials`} class="btn-outline" style="font-size:11px; padding:5px 10px;">Credentials</a>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      ) : (
+        <div style="text-align:center; padding:60px; color:var(--text-secondary);">Belum ada produk. Klik "Tambah Produk" untuk mulai.</div>
+      )}
+    </div>
+  </div>
+</DashboardLayout>
+
+<style>
+  .th { padding:14px 20px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; }
+  .td { padding:14px 20px; border-bottom:1px solid var(--border-color); }
+  .row:last-child .td { border-bottom: none; }
+  .row:hover { background: var(--bg-secondary); }
+  .chip {
+    padding: 6px 14px; font-size: 12px; border-radius: 999px;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    text-decoration: none;
+    background: var(--card-bg);
+  }
+  .chip.active { background: var(--accent); color: #111; border-color: var(--accent); font-weight: 600; }
+</style>
