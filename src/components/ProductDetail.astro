@@ -1,0 +1,339 @@
+---
+import { idrFormat, NICHE_LABEL } from '../lib/cart';
+import type { ProductNiche, RequirementFieldType } from '../lib/database.types';
+
+interface Variant {
+  id: string;
+  name: string;
+  price: number;
+  is_unlimited_stock: boolean;
+  stock_cached: number;
+  meta?: Record<string, unknown>;
+}
+
+interface Requirement {
+  field_key: string;
+  label: string;
+  field_type: RequirementFieldType;
+  required: boolean;
+  placeholder: string | null;
+}
+
+interface Props {
+  productId: string;
+  title: string;
+  niche: ProductNiche;
+  description: string | null;
+  thumbnailUrl: string | null;
+  galleryUrls: string[];
+  variants: Variant[];
+  requirements: Requirement[];
+  isAuthenticated: boolean;
+}
+
+const {
+  productId,
+  title,
+  niche,
+  description,
+  thumbnailUrl,
+  galleryUrls,
+  variants,
+  requirements,
+  isAuthenticated,
+} = Astro.props;
+
+const firstVariant = variants[0];
+const displayImages = thumbnailUrl
+  ? [thumbnailUrl, ...galleryUrls.filter((u) => u !== thumbnailUrl)]
+  : galleryUrls;
+---
+
+<section class="product-detail" data-product-id={productId}>
+  <div class="media">
+    {displayImages.length > 0 ? (
+      <img src={displayImages[0]} alt={title} class="hero-img" />
+    ) : (
+      <div class="hero-placeholder">📦</div>
+    )}
+  </div>
+
+  <div class="info">
+    <div>
+      <span class="niche-badge">{NICHE_LABEL[niche]}</span>
+      <h1 class="title">{title}</h1>
+    </div>
+
+    {description && (
+      <div class="description">{description}</div>
+    )}
+
+    <!-- Variant picker -->
+    <div class="variants-block">
+      <h3 class="section-title">Pilih Paket</h3>
+      <div class="variants">
+        {variants.map((v, idx) => {
+          const outOfStock = !v.is_unlimited_stock && v.stock_cached <= 0;
+          return (
+            <label class={`variant-option ${outOfStock ? 'disabled' : ''}`}>
+              <input
+                type="radio"
+                name="variant"
+                value={v.id}
+                data-price={v.price}
+                data-name={v.name}
+                checked={idx === 0 && !outOfStock}
+                disabled={outOfStock}
+              />
+              <div class="variant-body">
+                <div class="variant-name">{v.name}</div>
+                <div class="variant-price">{idrFormat(v.price)}</div>
+                {!v.is_unlimited_stock && (
+                  <div class={`stock ${outOfStock ? 'out' : 'in'}`}>
+                    {outOfStock ? 'Stok habis' : `Stok: ${v.stock_cached}`}
+                  </div>
+                )}
+                {v.is_unlimited_stock && (
+                  <div class="stock in">Tersedia</div>
+                )}
+              </div>
+            </label>
+          );
+        })}
+      </div>
+    </div>
+
+    <!-- Dynamic requirements form -->
+    {requirements.length > 0 && (
+      <div class="requirements-block">
+        <h3 class="section-title">Data yang dibutuhkan</h3>
+        <div class="requirements">
+          {requirements.map((req) => (
+            <div class="field">
+              <label class="field-label" for={`req-${req.field_key}`}>
+                {req.label}
+                {req.required && <span style="color:#ef4444;"> *</span>}
+              </label>
+              {req.field_type === 'textarea' ? (
+                <textarea
+                  id={`req-${req.field_key}`}
+                  name={req.field_key}
+                  placeholder={req.placeholder ?? ''}
+                  class="field-input"
+                  rows="4"
+                  data-requirement="true"
+                  data-required={req.required ? 'true' : 'false'}
+                ></textarea>
+              ) : (
+                <input
+                  id={`req-${req.field_key}`}
+                  name={req.field_key}
+                  type={req.field_type === 'url' ? 'url' : 'text'}
+                  placeholder={req.placeholder ?? ''}
+                  class="field-input"
+                  data-requirement="true"
+                  data-required={req.required ? 'true' : 'false'}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    <!-- Qty + CTA -->
+    <div class="buy-block">
+      <div class="qty-row">
+        <label for="qty">Jumlah</label>
+        <div class="qty-control">
+          <button type="button" id="qty-minus" class="qty-btn">-</button>
+          <input type="number" id="qty" value="1" min="1" max="100" />
+          <button type="button" id="qty-plus" class="qty-btn">+</button>
+        </div>
+      </div>
+
+      <div class="price-total">
+        <div>
+          <div style="font-size:11px; color:var(--text-secondary);">Total</div>
+          <div id="total-price" style="font-size:22px; font-weight:700;">{firstVariant ? idrFormat(firstVariant.price) : idrFormat(0)}</div>
+        </div>
+        {!isAuthenticated ? (
+          <a href={`/login?redirectTo=${encodeURIComponent(Astro.url.pathname)}`} class="btn-accent" style="padding:14px 28px;">Login untuk Beli</a>
+        ) : (
+          <button id="add-to-cart" class="btn-accent" style="padding:14px 28px;">+ Keranjang</button>
+        )}
+      </div>
+
+      <div id="add-feedback" class="feedback" style="display:none;"></div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .product-detail {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    padding: 32px 0;
+  }
+  @media (max-width: 900px) {
+    .product-detail { grid-template-columns: 1fr; }
+  }
+  .media { position: sticky; top: 80px; align-self: flex-start; }
+  .hero-img, .hero-placeholder {
+    width: 100%;
+    aspect-ratio: 4/3;
+    border-radius: 16px;
+    background: var(--bg-secondary);
+    object-fit: cover;
+  }
+  .hero-placeholder {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 80px;
+  }
+
+  .info { display: flex; flex-direction: column; gap: 24px; }
+  .niche-badge {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    background: rgba(166, 255, 0, 0.12);
+    padding: 4px 10px;
+    border-radius: 999px;
+    text-transform: uppercase;
+  }
+  .title { font-size: 28px; font-weight: 700; margin: 8px 0 0; line-height: 1.25; }
+  .description { color: var(--text-secondary); font-size: 14px; line-height: 1.65; white-space: pre-wrap; }
+
+  .section-title { font-size: 13px; font-weight: 600; margin: 0 0 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); }
+  .variants { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .variant-option {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 14px; border: 1px solid var(--border-color); border-radius: 12px;
+    cursor: pointer; transition: all 0.15s;
+    background: var(--card-bg);
+  }
+  .variant-option:hover:not(.disabled) { border-color: var(--accent); }
+  .variant-option.disabled { opacity: 0.5; cursor: not-allowed; }
+  .variant-option input { margin-top: 3px; accent-color: var(--accent); }
+  .variant-option:has(input:checked) {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(166, 255, 0, 0.12);
+  }
+  .variant-body { flex: 1; }
+  .variant-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .variant-price { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+  .stock { font-size: 11px; margin-top: 4px; }
+  .stock.in { color: #22c55e; }
+  .stock.out { color: #ef4444; }
+
+  .field { margin-bottom: 12px; }
+  .field-label { font-size: 12px; font-weight: 500; display: block; margin-bottom: 6px; color: var(--text-secondary); }
+  .field-input {
+    width: 100%; padding: 10px 14px;
+    border: 1px solid var(--border-color); border-radius: 10px;
+    font-family: inherit; font-size: 14px;
+    background: var(--bg-secondary); color: var(--text-primary);
+  }
+  .field-input:focus { outline: none; border-color: var(--accent); }
+
+  .buy-block {
+    border-top: 1px solid var(--border-color);
+    padding-top: 20px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .qty-row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
+  .qty-control { display: flex; align-items: center; gap: 0; border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; }
+  .qty-btn { background: transparent; border: none; cursor: pointer; padding: 8px 14px; color: var(--text-primary); font-size: 16px; }
+  .qty-btn:hover { background: var(--bg-secondary); }
+  #qty { width: 60px; text-align: center; border: none; background: transparent; color: var(--text-primary); font-size: 14px; padding: 8px 4px; }
+  .price-total { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+
+  .feedback { padding: 12px 16px; border-radius: 10px; font-size: 13px; }
+  .feedback.success { background: rgba(34,197,94,0.1); color: #22c55e; }
+  .feedback.error { background: rgba(239,68,68,0.1); color: #ef4444; }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('.product-detail');
+  if (root) {
+    const qtyInput = document.getElementById('qty') as HTMLInputElement;
+    const totalEl = document.getElementById('total-price')!;
+    const feedback = document.getElementById('add-feedback') as HTMLElement;
+
+    const idr = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+
+    function updateTotal() {
+      const checked = document.querySelector<HTMLInputElement>('input[name="variant"]:checked');
+      const price = Number(checked?.dataset.price ?? 0);
+      const qty = Math.max(1, Number(qtyInput.value) || 1);
+      totalEl.textContent = idr(price * qty);
+    }
+
+    document.querySelectorAll<HTMLInputElement>('input[name="variant"]').forEach((r) => {
+      r.addEventListener('change', updateTotal);
+    });
+    qtyInput.addEventListener('input', updateTotal);
+
+    document.getElementById('qty-minus')?.addEventListener('click', () => {
+      qtyInput.value = String(Math.max(1, Number(qtyInput.value) - 1));
+      updateTotal();
+    });
+    document.getElementById('qty-plus')?.addEventListener('click', () => {
+      qtyInput.value = String(Math.max(1, Number(qtyInput.value) + 1));
+      updateTotal();
+    });
+
+    document.getElementById('add-to-cart')?.addEventListener('click', async (e) => {
+      const btn = e.currentTarget as HTMLButtonElement;
+      const variantRadio = document.querySelector<HTMLInputElement>('input[name="variant"]:checked');
+      if (!variantRadio) {
+        showFeedback('Pilih paket dulu', 'error');
+        return;
+      }
+
+      const buyerInput: Record<string, string> = {};
+      let invalid = false;
+      document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-requirement="true"]').forEach((el) => {
+        const required = el.dataset.required === 'true';
+        const val = el.value.trim();
+        if (required && !val) invalid = true;
+        buyerInput[el.name] = val;
+      });
+
+      if (invalid) {
+        showFeedback('Lengkapi semua kolom wajib', 'error');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Menambah...';
+
+      try {
+        const res = await fetch('/api/cart/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            variantId: variantRadio.value,
+            quantity: Math.max(1, Number(qtyInput.value) || 1),
+            buyerInput,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Gagal menambah ke keranjang');
+        showFeedback('Ditambahkan ke keranjang!', 'success');
+        setTimeout(() => { window.location.href = '/cart'; }, 700);
+      } catch (err: any) {
+        showFeedback(err.message, 'error');
+        btn.disabled = false;
+        btn.textContent = '+ Keranjang';
+      }
+    });
+
+    function showFeedback(msg: string, kind: 'success' | 'error') {
+      feedback.style.display = 'block';
+      feedback.className = `feedback ${kind}`;
+      feedback.textContent = msg;
+    }
+  }
+</script>
