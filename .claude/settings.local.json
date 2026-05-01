@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(pnpm astro *)"
+      "Bash(pnpm astro *)",
+      "Bash(Get-ChildItem -Path \"E:\\\\smweb\\\\tokoakun\" -Recurse -Name)",
+      "Bash(Select-String -Pattern \"tailwind|theme\" -CaseSensitive)"
     ]
   }
 }
